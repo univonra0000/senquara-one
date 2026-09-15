@@ -1,0 +1,15 @@
+name = "senquara-one"
+main = "worker/index.js"
+compatibility_date = "2026-09-15"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "senquara-one-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+APP_SECRET = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
