@@ -1,0 +1,11 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT NOT NULL UNIQUE,name TEXT NOT NULL,mobile TEXT,business_name TEXT,country TEXT,password_hash TEXT NOT NULL,password_salt TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'owner',created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS roles(id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,permissions TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS user_roles(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,role_id TEXT NOT NULL,UNIQUE(user_id,role_id),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,FOREIGN KEY(role_id) REFERENCES roles(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS master_records(id TEXT PRIMARY KEY,category TEXT NOT NULL,name TEXT NOT NULL,data TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'active',version INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_master_category ON master_records(category);
+CREATE TABLE IF NOT EXISTS approval_requests(id TEXT PRIMARY KEY,user_id TEXT,entity_type TEXT,entity_id TEXT,action TEXT,status TEXT NOT NULL DEFAULT 'pending',payload TEXT,created_at TEXT NOT NULL,approved_at TEXT);
+CREATE TABLE IF NOT EXISTS app_releases(id TEXT PRIMARY KEY,version TEXT NOT NULL,master_snapshot TEXT NOT NULL,approved_by TEXT,status TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS audit_log(id TEXT PRIMARY KEY,user_id TEXT,action TEXT NOT NULL,entity TEXT,entity_id TEXT,details TEXT,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS payment_transactions(id TEXT PRIMARY KEY,user_id TEXT,provider TEXT,method TEXT,amount REAL,currency TEXT,status TEXT,reference TEXT,metadata TEXT,created_at TEXT NOT NULL,updated_at TEXT);
+CREATE TABLE IF NOT EXISTS business_records(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,record_type TEXT NOT NULL,data TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL,UNIQUE(user_id,record_type),FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
