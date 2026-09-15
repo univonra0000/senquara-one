@@ -9,7 +9,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "senquara-one-db"
-database_id = "YOUR_FULL_DATABASE_ID"
+database_id = "5caf94de-b69f-402c-881d-2f7e564a3084"
 
 [vars]
 APP_SECRET = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
