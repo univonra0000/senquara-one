@@ -1,1 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1026">
+  <meta name="description" content="SENQUARA ONE — One Platform. Everything Connected.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+  <title>SENQUARA ONE</title>
+</head>
+<body>
+  <div id="auth" class="auth-shell">
+    <div class="auth-card">
+      <div class="brand-mark">SO</div>
+      <div class="brand-name">SENQUARA ONE</div>
+      <div class="brand-tag">One Platform. Everything Connected.</div>
 
+      <section id="registerView">
+        <h1>Create your account</h1>
+        <p class="muted">Register once. Your next visit opens the login page.</p>
+        <form id="registerForm">
+          <label>Owner name<input id="regName" required autocomplete="name"></label>
+          <label>Business / company name<input id="regBusiness" required></label>
+          <label>Email<input id="regEmail" type="email" required autocomplete="email"></label>
+          <label>Mobile number<input id="regMobile" inputmode="tel" required></label>
+          <label>Password<input id="regPassword" type="password" minlength="6" required autocomplete="new-password"></label>
+          <label>Country<select id="regCountry"></select></label>
+          <button class="primary full" type="submit">Create SENQUARA ONE account</button>
+        </form>
+        <button class="link-btn" id="showLogin">Already registered? Login</button>
+      </section>
+
+      <section id="loginView" class="hidden">
+        <h1>Welcome back</h1>
+        <p class="muted">Sign in to continue to your SENQUARA ONE workspace.</p>
+        <form id="loginForm">
+          <label>Email<input id="loginEmail" type="email" required autocomplete="email"></label>
+          <label>Password<input id="loginPassword" type="password" required autocomplete="current-password"></label>
+          <button class="primary full" type="submit">Login</button>
+        </form>
+        <button class="link-btn" id="showRegister">Create a new account</button>
+        <button class="link-btn" id="forgotPassword">Forgot password?</button>
+      </section>
+      <div id="authMsg" class="notice hidden"></div>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="side-brand">
+        <div class="side-logo">SO</div>
+        <div><strong>SENQUARA ONE</strong><small>Connected business platform</small></div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="side-bottom">
+        <div id="connectionBadge" class="status offline">Offline-ready</div>
+        <button id="logoutBtn" class="ghost full">Log out</button>
+      </div>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+        <div class="top-title">
+          <strong id="pageTitle">Dashboard</strong>
+          <span id="deviceMode">Web</span>
+        </div>
+        <div class="top-actions">
+          <button id="syncBtn" class="soft-btn">↻ Sync</button>
+          <button id="installBtn" class="soft-btn hidden">Install</button>
+          <button id="profileBtn" class="avatar">SO</button>
+        </div>
+      </header>
+
+      <div id="content" class="content"></div>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" class="toast-root"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
