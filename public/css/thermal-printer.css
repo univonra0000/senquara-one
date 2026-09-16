@@ -1,0 +1,13 @@
+/* SENQUARA ONE thermal invoice controls */
+.senquara-print-cell {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-left: 4px;
+}
+@media (max-width: 700px) {
+  .senquara-print-cell .soft-btn {
+    min-height: 36px;
+    font-size: 12px;
+  }
+}
