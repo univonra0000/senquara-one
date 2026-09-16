@@ -1,12 +1,12 @@
 const JSON_HEADERS = {
   "content-type": "application/json;charset=UTF-8",
-  "cache-control": "no-store",
+  "cache-control": "no-store"
 };
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: JSON_HEADERS,
+    headers: JSON_HEADERS
   });
 
 function cors(response) {
@@ -22,30 +22,32 @@ function cors(response) {
   return response;
 }
 
-function b64u(value) {
-  return btoa(String.fromCharCode(...new Uint8Array(value)))
+function b64u(data) {
+  return btoa(
+    String.fromCharCode(...new Uint8Array(data))
+  )
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+    .replace(/=+$/, "");
 }
 
-function ub64(value) {
-  value = value.replace(/-/g, "+").replace(/_/g, "/");
+function ub64(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
 
-  while (value.length % 4) {
-    value += "=";
+  while (str.length % 4) {
+    str += "=";
   }
 
-  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+  return Uint8Array.from(
+    atob(str),
+    c => c.charCodeAt(0)
+  );
 }
 
-async function hashPassword(password, salt) {
-  const saltBytes =
-    salt instanceof Uint8Array
-      ? salt
-      : salt
-        ? ub64(salt)
-        : crypto.getRandomValues(new Uint8Array(16));
+async function hashPassword(password, saltValue) {
+  const salt = saltValue
+    ? ub64(saltValue)
+    : crypto.getRandomValues(new Uint8Array(16));
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -58,17 +60,17 @@ async function hashPassword(password, salt) {
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt: saltBytes,
+      salt,
       iterations: 210000,
-      hash: "SHA-256",
+      hash: "SHA-256"
     },
     key,
     256
   );
 
   return {
-    salt: b64u(saltBytes),
-    hash: b64u(bits),
+    salt: b64u(salt),
+    hash: b64u(bits)
   };
 }
 
@@ -78,14 +80,16 @@ async function sign(payload, secret) {
     new TextEncoder().encode(secret),
     {
       name: "HMAC",
-      hash: "SHA-256",
+      hash: "SHA-256"
     },
     false,
     ["sign"]
   );
 
   const body = b64u(
-    new TextEncoder().encode(JSON.stringify(payload))
+    new TextEncoder().encode(
+      JSON.stringify(payload)
+    )
   );
 
   const signature = b64u(
@@ -114,7 +118,7 @@ async function verifyToken(token, secret) {
       new TextEncoder().encode(secret),
       {
         name: "HMAC",
-        hash: "SHA-256",
+        hash: "SHA-256"
       },
       false,
       ["verify"]
@@ -130,7 +134,9 @@ async function verifyToken(token, secret) {
     if (!valid) return null;
 
     const payload = JSON.parse(
-      new TextDecoder().decode(ub64(body))
+      new TextDecoder().decode(
+        ub64(body)
+      )
     );
 
     if (!payload.exp || payload.exp < Date.now()) {
@@ -158,23 +164,24 @@ async function auth(request, env) {
 
   if (!payload) return null;
 
-  return await env.DB.prepare(
-    `SELECT
-      id,
-      email,
-      name,
-      mobile,
-      business_name,
-      country,
-      role
-     FROM users
-     WHERE id = ?`
-  )
+  return await env.DB
+    .prepare(
+      `SELECT
+        id,
+        email,
+        name,
+        mobile,
+        business_name,
+        country,
+        role
+       FROM users
+       WHERE id = ?`
+    )
     .bind(payload.sub)
     .first();
 }
 
-function id() {
+function makeId() {
   return crypto.randomUUID();
 }
 
@@ -186,13 +193,22 @@ async function audit(
   entityId,
   details = {}
 ) {
-  await env.DB.prepare(
-    `INSERT INTO audit_log
-      (id, user_id, action, entity, entity_id, details, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
-  )
+  await env.DB
+    .prepare(
+      `INSERT INTO audit_log
+       (
+         id,
+         user_id,
+         action,
+         entity,
+         entity_id,
+         details,
+         created_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
     .bind(
-      id(),
+      makeId(),
       user?.id || null,
       action,
       entity,
@@ -205,14 +221,13 @@ async function audit(
 async function handle(request, env) {
   const url = new URL(request.url);
 
-  // CORS preflight
   if (request.method === "OPTIONS") {
     return new Response(null, {
-      status: 204,
+      status: 204
     });
   }
 
-  // Health check
+  /* Health check */
   if (
     url.pathname === "/api/health" &&
     request.method === "GET"
@@ -220,11 +235,11 @@ async function handle(request, env) {
     return json({
       ok: true,
       service: "SENQUARA ONE Cloudflare D1 API",
-      time: new Date().toISOString(),
+      time: new Date().toISOString()
     });
   }
 
-  // REGISTER
+  /* Register */
   if (
     url.pathname === "/api/auth/register" &&
     request.method === "POST"
@@ -240,39 +255,42 @@ async function handle(request, env) {
       return json(
         {
           error:
-            "Required registration fields are missing",
+            "Required registration fields are missing"
         },
         400
       );
     }
 
-    const email = String(body.email)
+    const email = body.email
       .trim()
       .toLowerCase();
 
-    const exists = await env.DB.prepare(
-      "SELECT id FROM users WHERE email = ?"
-    )
+    const exists = await env.DB
+      .prepare(
+        "SELECT id FROM users WHERE email = ?"
+      )
       .bind(email)
       .first();
 
     if (exists) {
       return json(
         {
-          error: "Email already registered",
+          error:
+            "Email already registered"
         },
         409
       );
     }
 
-    const passwordData = await hashPassword(
-      String(body.password)
+    const password = await hashPassword(
+      body.password
     );
 
-    const userId = id();
+    const userId = makeId();
 
-    await env.DB.prepare(
-      `INSERT INTO users
+    await env.DB
+      .prepare(
+        `INSERT INTO users
         (
           id,
           email,
@@ -285,28 +303,33 @@ async function handle(request, env) {
           role,
           created_at
         )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-    )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      )
       .bind(
         userId,
         email,
         body.name,
         body.mobile || "",
         body.businessName,
-        body.country || "IN",
-        passwordData.hash,
-        passwordData.salt,
+        body.country || "",
+        password.hash,
+        password.salt,
         "owner"
       )
       .run();
 
-    await env.DB.prepare(
-      `INSERT INTO user_roles
-        (id, user_id, role_id)
-       VALUES (?, ?, ?)`
-    )
+    await env.DB
+      .prepare(
+        `INSERT INTO user_roles
+        (
+          id,
+          user_id,
+          role_id
+        )
+        VALUES (?, ?, ?)`
+      )
       .bind(
-        id(),
+        makeId(),
         userId,
         "owner"
       )
@@ -315,7 +338,9 @@ async function handle(request, env) {
     const token = await sign(
       {
         sub: userId,
-        exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        exp:
+          Date.now() +
+          1000 * 60 * 60 * 24 * 7
       },
       env.APP_SECRET
     );
@@ -329,50 +354,53 @@ async function handle(request, env) {
         mobile: body.mobile || "",
         business: {
           name: body.businessName,
-          country: body.country || "IN",
+          country: body.country || ""
         },
-        role: "owner",
-      },
+        role: "owner"
+      }
     });
   }
 
-  // LOGIN
+  /* Login */
   if (
     url.pathname === "/api/auth/login" &&
     request.method === "POST"
   ) {
     const body = await request.json();
 
-    const email = String(body.email || "")
+    const email = (body.email || "")
       .trim()
       .toLowerCase();
 
-    const user = await env.DB.prepare(
-      "SELECT * FROM users WHERE email = ?"
-    )
+    const user = await env.DB
+      .prepare(
+        "SELECT * FROM users WHERE email = ?"
+      )
       .bind(email)
       .first();
 
     if (!user) {
       return json(
         {
-          error: "Invalid email or password",
+          error:
+            "Invalid email or password"
         },
         401
       );
     }
 
-    const passwordData = await hashPassword(
-      String(body.password || ""),
+    const password = await hashPassword(
+      body.password || "",
       user.password_salt
     );
 
     if (
-      passwordData.hash !== user.password_hash
+      password.hash !== user.password_hash
     ) {
       return json(
         {
-          error: "Invalid email or password",
+          error:
+            "Invalid email or password"
         },
         401
       );
@@ -381,7 +409,9 @@ async function handle(request, env) {
     const token = await sign(
       {
         sub: user.id,
-        exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        exp:
+          Date.now() +
+          1000 * 60 * 60 * 24 * 7
       },
       env.APP_SECRET
     );
@@ -395,59 +425,48 @@ async function handle(request, env) {
         mobile: user.mobile,
         business: {
           name: user.business_name,
-          country: user.country,
+          country: user.country
         },
-        role: user.role,
-      },
+        role: user.role
+      }
     });
   }
 
-  // AUTHENTICATED ROUTES
-  const user = await auth(request, env);
+  /* Authenticated API */
+  const user = await auth(
+    request,
+    env
+  );
 
-  // Current user
   if (
     url.pathname === "/api/me" &&
     request.method === "GET"
   ) {
-    if (!user) {
-      return json(
-        {
-          error: "Unauthorized",
-        },
-        401
-      );
-    }
-
-    return json({
-      user,
-    });
+    return user
+      ? json({ user })
+      : json(
+          { error: "Unauthorized" },
+          401
+        );
   }
 
   if (!user) {
     return json(
-      {
-        error: "Unauthorized",
-      },
+      { error: "Unauthorized" },
       401
     );
   }
 
-  // SYNC PUSH
+  /* Sync push */
   if (
     url.pathname === "/api/sync/push" &&
     request.method === "POST"
   ) {
     const body = await request.json();
 
-    const workspace =
-      body.workspace || {};
-
-    const changes =
-      body.changes || [];
-
-    await env.DB.prepare(
-      `INSERT INTO business_records
+    await env.DB
+      .prepare(
+        `INSERT INTO business_records
         (
           id,
           user_id,
@@ -456,18 +475,20 @@ async function handle(request, env) {
           version,
           updated_at
         )
-       VALUES (?, ?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(user_id, record_type)
-       DO UPDATE SET
-         data = excluded.data,
-         version = excluded.version,
-         updated_at = excluded.updated_at`
-    )
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(user_id, record_type)
+        DO UPDATE SET
+          data = excluded.data,
+          version = excluded.version,
+          updated_at = excluded.updated_at`
+      )
       .bind(
-        id(),
+        makeId(),
         user.id,
         "workspace",
-        JSON.stringify(workspace),
+        JSON.stringify(
+          body.workspace || {}
+        ),
         Date.now()
       )
       .run();
@@ -479,29 +500,31 @@ async function handle(request, env) {
       "workspace",
       user.id,
       {
-        changes: changes.length,
+        changes:
+          (body.changes || []).length
       }
     );
 
     return json({
-      ok: true,
+      ok: true
     });
   }
 
-  // SYNC PULL
+  /* Sync pull */
   if (
     url.pathname === "/api/sync/pull" &&
     request.method === "GET"
   ) {
-    const record = await env.DB.prepare(
-      `SELECT
-        data,
-        version,
-        updated_at
-       FROM business_records
-       WHERE user_id = ?
+    const record = await env.DB
+      .prepare(
+        `SELECT
+          data,
+          version,
+          updated_at
+         FROM business_records
+         WHERE user_id = ?
          AND record_type = 'workspace'`
-    )
+      )
       .bind(user.id)
       .first();
 
@@ -509,61 +532,59 @@ async function handle(request, env) {
       workspace: record
         ? JSON.parse(record.data)
         : null,
-      version: record?.version || 0,
+      version:
+        record?.version || 0,
       updated_at:
-        record?.updated_at || null,
+        record?.updated_at || null
     });
   }
 
-  // MASTER DATA
+  /* Master data */
   if (
     url.pathname.startsWith("/api/master/") &&
     request.method === "GET"
   ) {
     const table =
-      url.pathname.split("/").pop();
+      url.pathname
+        .split("/")
+        .pop();
 
-    if (!table) {
-      return json(
-        {
-          error: "Master category missing",
-        },
-        400
-      );
-    }
-
-    const result = await env.DB.prepare(
-      `SELECT
-        id,
-        name,
-        data,
-        status,
-        version,
-        updated_at
-       FROM master_records
-       WHERE category = ?
-       ORDER BY name`
-    )
+    const rows = await env.DB
+      .prepare(
+        `SELECT
+          id,
+          name,
+          data,
+          status,
+          version,
+          updated_at
+         FROM master_records
+         WHERE category = ?
+         ORDER BY name`
+      )
       .bind(table)
       .all();
 
     return json({
-      rows: result.results || [],
+      rows: rows.results || []
     });
   }
 
-  // PUBLISH APPROVAL
+  /* Publish */
   if (
-    url.pathname === "/api/approvals/publish" &&
+    url.pathname ===
+      "/api/approvals/publish" &&
     request.method === "POST"
   ) {
     if (
-      !["owner", "admin"].includes(user.role)
+      !["owner", "admin"].includes(
+        user.role
+      )
     ) {
       return json(
         {
           error:
-            "Owner/Admin approval required",
+            "Owner/Admin approval required"
         },
         403
       );
@@ -574,8 +595,9 @@ async function handle(request, env) {
     const version =
       body.version || "1.0.0";
 
-    await env.DB.prepare(
-      `INSERT INTO app_releases
+    await env.DB
+      .prepare(
+        `INSERT INTO app_releases
         (
           id,
           version,
@@ -584,12 +606,14 @@ async function handle(request, env) {
           status,
           created_at
         )
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`
-    )
+        VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      )
       .bind(
-        id(),
+        makeId(),
         version,
-        JSON.stringify(body.master || {}),
+        JSON.stringify(
+          body.master || {}
+        ),
         user.id,
         "published"
       )
@@ -605,30 +629,23 @@ async function handle(request, env) {
 
     return json({
       ok: true,
-      version,
+      version
     });
   }
 
-  // UPI PAYMENT CREATION
+  /* UPI payment */
   if (
-    url.pathname === "/api/payments/upi/create" &&
+    url.pathname ===
+      "/api/payments/upi/create" &&
     request.method === "POST"
   ) {
     const body = await request.json();
 
-    const paymentId = id();
+    const paymentId = makeId();
 
-    const amount =
-      Number(body.amount) || 0;
-
-    const currency =
-      body.currency || "INR";
-
-    const reference =
-      body.reference || paymentId;
-
-    await env.DB.prepare(
-      `INSERT INTO payment_transactions
+    await env.DB
+      .prepare(
+        `INSERT INTO payment_transactions
         (
           id,
           user_id,
@@ -641,17 +658,18 @@ async function handle(request, env) {
           metadata,
           created_at
         )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-    )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      )
       .bind(
         paymentId,
         user.id,
         "provider-pending",
         "UPI",
-        amount,
-        currency,
+        Number(body.amount) || 0,
+        body.currency || "INR",
         "created",
-        reference,
+        body.reference ||
+          paymentId,
         JSON.stringify(body)
       )
       .run();
@@ -661,19 +679,18 @@ async function handle(request, env) {
       paymentId,
       status: "created",
       message:
-        "Connect an authorized PSP/payment provider adapter for production UPI confirmation.",
+        "Connect an authorized PSP/payment provider adapter for production UPI confirmation."
     });
   }
 
-  // ASSETS / FRONTEND
+  /* Serve website */
   if (!url.pathname.startsWith("/api/")) {
     return env.ASSETS.fetch(request);
   }
 
-  // API NOT FOUND
   return json(
     {
-      error: "Not found",
+      error: "Not found"
     },
     404
   );
@@ -683,20 +700,25 @@ export default {
   async fetch(request, env) {
     try {
       return cors(
-        await handle(request, env)
+        await handle(
+          request,
+          env
+        )
       );
     } catch (error) {
       return cors(
         json(
           {
             error: "Server error",
-            detail: String(
-              error?.message || error
-            ),
+            detail:
+              String(
+                error?.message ||
+                  error
+              )
           },
           500
         )
       );
     }
-  },
+  }
 };
