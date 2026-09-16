@@ -1,0 +1,5 @@
+Find this existing line in public/index.html:
+<script src="js/app.js"></script>
+
+Immediately AFTER it add:
+<script src="js/thermal-printer.js"></script>
