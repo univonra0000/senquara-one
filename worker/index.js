@@ -1,22 +1,702 @@
-const JSON_HEADERS={'content-type':'application/json;charset=UTF-8','cache-control':'no-store'};
-const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:JSON_HEADERS});
-function cors(r){r.headers.set('Access-Control-Allow-Origin','*');r.headers.set('Access-Control-Allow-Headers','Content-Type, Authorization');r.headers.set('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');return r}
-function b64u(a){return btoa(String.fromCharCode(...new Uint8Array(a))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-function ub64(s){s=s.replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
-async function hashPassword(password,saltHex){const salt=saltHex?ub64(saltHex):crypto.getRandomValues(new Uint8Array(16));const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:210000,hash:'SHA-256'},key,256);return {salt:b64u(salt),hash:b64u(bits)}}
-async function sign(payload,secret){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);const body=b64u(new TextEncoder().encode(JSON.stringify(payload)));const sig=b64u(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(body)));return body+'.'+sig}
-async function verifyToken(t,secret){try{const [body,sig]=t.split('.');const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['verify']);const ok=await crypto.subtle.verify('HMAC',key,ub64(sig),new TextEncoder().encode(body));if(!ok)return null;const p=JSON.parse(new TextDecoder().decode(ub64(body)));if(p.exp<Date.now())return null;return p}catch{return null}}
-async function auth(req,env){const h=req.headers.get('Authorization')||'';const p=await verifyToken(h.startsWith('Bearer ')?h.slice(7):'',env.APP_SECRET);if(!p)return null;return await env.DB.prepare('SELECT id,email,name,mobile,business_name,country,role FROM users WHERE id=?').bind(p.sub).first()}
-function id(){return crypto.randomUUID()}
-async function audit(env,user,action,entity,entityId,details={}){await env.DB.prepare('INSERT INTO audit_log(id,user_id,action,entity,entity_id,details,created_at) VALUES(?,?,?,?,?,?,datetime(\'now\'))').bind(id(),user?.id||null,action,entity,entityId,JSON.stringify(details)).run()}
-async function handle(req,env){const url=new URL(req.url);if(req.method==='OPTIONS')return new Response(null,{status:204});if(url.pathname==='/api/health')return json({ok:true,service:'SENQUARA ONE Cloudflare D1 API',time:new Date().toISOString()});
-if(url.pathname==='/api/auth/register'&&req.method==='POST'){const b=await req.json();if(!b.email||!b.password||!b.name||!b.businessName)return json({error:'Required registration fields are missing'},400);const exists=await env.DB.prepare('SELECT id FROM users WHERE email=?').bind(b.email.toLowerCase()).first();if(exists)return json({error:'Email already registered'},409);const hp=await hashPassword(b.password);const uid=id();await env.DB.prepare('INSERT INTO users(id,email,name,mobile,business_name,country,password_hash,password_salt,role,created_at) VALUES(?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(uid,b.email.toLowerCase(),b.name,b.mobile||'',b.businessName,b.country||'',hp.hash,hp.salt,'owner').run();await env.DB.prepare('INSERT INTO user_roles(id,user_id,role_id) VALUES(?,?,?)').bind(id(),uid,'owner').run();const t=await sign({sub:uid,exp:Date.now()+1000*60*60*24*7},env.APP_SECRET);return json({token:t,user:{id:uid,name:b.name,email:b.email.toLowerCase(),mobile:b.mobile||'',business:{name:b.businessName,country:b.country||''},role:'owner'}})}
-if(url.pathname==='/api/auth/login'&&req.method==='POST'){const b=await req.json();const u=await env.DB.prepare('SELECT * FROM users WHERE email=?').bind((b.email||'').toLowerCase()).first();if(!u)return json({error:'Invalid email or password'},401);const hp=await hashPassword(b.password,u.password_salt);if(hp.hash!==u.password_hash)return json({error:'Invalid email or password'},401);const t=await sign({sub:u.id,exp:Date.now()+1000*60*60*24*7},env.APP_SECRET);return json({token:t,user:{id:u.id,name:u.name,email:u.email,mobile:u.mobile,business:{name:u.business_name,country:u.country},role:u.role}})}
-const user=await auth(req,env);if(url.pathname==='/api/me'&&req.method==='GET')return user?json({user}):json({error:'Unauthorized'},401);if(!user)return json({error:'Unauthorized'},401);
-if(url.pathname==='/api/sync/push'&&req.method==='POST'){const b=await req.json();await env.DB.prepare('INSERT INTO business_records(id,user_id,record_type,data,version,updated_at) VALUES(?,?,?,?,?,datetime(\'now\')) ON CONFLICT(user_id,record_type) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at').bind(id(),user.id,'workspace',JSON.stringify(b.workspace||{}),Date.now(),).run();await audit(env,user,'SYNC_PUSH','workspace',user.id,{changes:(b.changes||[]).length});return json({ok:true})}
-if(url.pathname==='/api/sync/pull'&&req.method==='GET'){const r=await env.DB.prepare('SELECT data,version,updated_at FROM business_records WHERE user_id=? AND record_type=\'workspace\'').bind(user.id).first();return json({workspace:r?JSON.parse(r.data):null,version:r?.version||0,updated_at:r?.updated_at||null})}
-if(url.pathname.startsWith('/api/master/')&&req.method==='GET'){const table=url.pathname.split('/').pop();const rows=await env.DB.prepare('SELECT id,name,data,status,version,updated_at FROM master_records WHERE category=? ORDER BY name').bind(table).all();return json({rows:rows.results})}
-if(url.pathname==='/api/approvals/publish'&&req.method==='POST'){if(!['owner','admin'].includes(user.role))return json({error:'Owner/Admin approval required'},403);const b=await req.json();const version=b.version||'1.0.0';await env.DB.prepare('INSERT INTO app_releases(id,version,master_snapshot,approved_by,status,created_at) VALUES(?,?,?,?,?,datetime(\'now\'))').bind(id(),version,JSON.stringify(b.master||{}),user.id,'published').run();await audit(env,user,'PUBLISH','release',version);return json({ok:true,version})}
-if(url.pathname==='/api/payments/upi/create'&&req.method==='POST'){const b=await req.json();const pid=id();await env.DB.prepare('INSERT INTO payment_transactions(id,user_id,provider,method,amount,currency,status,reference,metadata,created_at) VALUES(?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(pid,user.id,'provider-pending','UPI',Number(b.amount)||0,b.currency||'INR','created',b.reference||pid,JSON.stringify(b)).run();return json({ok:true,paymentId:pid,status:'created',message:'Connect an authorized PSP/payment provider adapter for production UPI confirmation.'})}
-if(!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(req); return json({error:'Not found'},404)}
-export default {async fetch(req,env){try{return cors(await handle(req,env))}catch(e){return cors(json({error:'Server error',detail:String(e.message||e)},500))}}};
+const JSON_HEADERS = {
+  "content-type": "application/json;charset=UTF-8",
+  "cache-control": "no-store",
+};
+
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: JSON_HEADERS,
+  });
+
+function cors(response) {
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
+  return response;
+}
+
+function b64u(value) {
+  return btoa(String.fromCharCode(...new Uint8Array(value)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function ub64(value) {
+  value = value.replace(/-/g, "+").replace(/_/g, "/");
+
+  while (value.length % 4) {
+    value += "=";
+  }
+
+  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+}
+
+async function hashPassword(password, salt) {
+  const saltBytes =
+    salt instanceof Uint8Array
+      ? salt
+      : salt
+        ? ub64(salt)
+        : crypto.getRandomValues(new Uint8Array(16));
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: saltBytes,
+      iterations: 210000,
+      hash: "SHA-256",
+    },
+    key,
+    256
+  );
+
+  return {
+    salt: b64u(saltBytes),
+    hash: b64u(bits),
+  };
+}
+
+async function sign(payload, secret) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    {
+      name: "HMAC",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+
+  const body = b64u(
+    new TextEncoder().encode(JSON.stringify(payload))
+  );
+
+  const signature = b64u(
+    await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(body)
+    )
+  );
+
+  return `${body}.${signature}`;
+}
+
+async function verifyToken(token, secret) {
+  try {
+    if (!token || !secret) return null;
+
+    const parts = token.split(".");
+
+    if (parts.length !== 2) return null;
+
+    const [body, signature] = parts;
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      {
+        name: "HMAC",
+        hash: "SHA-256",
+      },
+      false,
+      ["verify"]
+    );
+
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      ub64(signature),
+      new TextEncoder().encode(body)
+    );
+
+    if (!valid) return null;
+
+    const payload = JSON.parse(
+      new TextDecoder().decode(ub64(body))
+    );
+
+    if (!payload.exp || payload.exp < Date.now()) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function auth(request, env) {
+  const authorization =
+    request.headers.get("Authorization") || "";
+
+  const token = authorization.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+
+  const payload = await verifyToken(
+    token,
+    env.APP_SECRET
+  );
+
+  if (!payload) return null;
+
+  return await env.DB.prepare(
+    `SELECT
+      id,
+      email,
+      name,
+      mobile,
+      business_name,
+      country,
+      role
+     FROM users
+     WHERE id = ?`
+  )
+    .bind(payload.sub)
+    .first();
+}
+
+function id() {
+  return crypto.randomUUID();
+}
+
+async function audit(
+  env,
+  user,
+  action,
+  entity,
+  entityId,
+  details = {}
+) {
+  await env.DB.prepare(
+    `INSERT INTO audit_log
+      (id, user_id, action, entity, entity_id, details, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+  )
+    .bind(
+      id(),
+      user?.id || null,
+      action,
+      entity,
+      entityId,
+      JSON.stringify(details)
+    )
+    .run();
+}
+
+async function handle(request, env) {
+  const url = new URL(request.url);
+
+  // CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+    });
+  }
+
+  // Health check
+  if (
+    url.pathname === "/api/health" &&
+    request.method === "GET"
+  ) {
+    return json({
+      ok: true,
+      service: "SENQUARA ONE Cloudflare D1 API",
+      time: new Date().toISOString(),
+    });
+  }
+
+  // REGISTER
+  if (
+    url.pathname === "/api/auth/register" &&
+    request.method === "POST"
+  ) {
+    const body = await request.json();
+
+    if (
+      !body.email ||
+      !body.password ||
+      !body.name ||
+      !body.businessName
+    ) {
+      return json(
+        {
+          error:
+            "Required registration fields are missing",
+        },
+        400
+      );
+    }
+
+    const email = String(body.email)
+      .trim()
+      .toLowerCase();
+
+    const exists = await env.DB.prepare(
+      "SELECT id FROM users WHERE email = ?"
+    )
+      .bind(email)
+      .first();
+
+    if (exists) {
+      return json(
+        {
+          error: "Email already registered",
+        },
+        409
+      );
+    }
+
+    const passwordData = await hashPassword(
+      String(body.password)
+    );
+
+    const userId = id();
+
+    await env.DB.prepare(
+      `INSERT INTO users
+        (
+          id,
+          email,
+          name,
+          mobile,
+          business_name,
+          country,
+          password_hash,
+          password_salt,
+          role,
+          created_at
+        )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+      .bind(
+        userId,
+        email,
+        body.name,
+        body.mobile || "",
+        body.businessName,
+        body.country || "IN",
+        passwordData.hash,
+        passwordData.salt,
+        "owner"
+      )
+      .run();
+
+    await env.DB.prepare(
+      `INSERT INTO user_roles
+        (id, user_id, role_id)
+       VALUES (?, ?, ?)`
+    )
+      .bind(
+        id(),
+        userId,
+        "owner"
+      )
+      .run();
+
+    const token = await sign(
+      {
+        sub: userId,
+        exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+      },
+      env.APP_SECRET
+    );
+
+    return json({
+      token,
+      user: {
+        id: userId,
+        name: body.name,
+        email,
+        mobile: body.mobile || "",
+        business: {
+          name: body.businessName,
+          country: body.country || "IN",
+        },
+        role: "owner",
+      },
+    });
+  }
+
+  // LOGIN
+  if (
+    url.pathname === "/api/auth/login" &&
+    request.method === "POST"
+  ) {
+    const body = await request.json();
+
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
+
+    const user = await env.DB.prepare(
+      "SELECT * FROM users WHERE email = ?"
+    )
+      .bind(email)
+      .first();
+
+    if (!user) {
+      return json(
+        {
+          error: "Invalid email or password",
+        },
+        401
+      );
+    }
+
+    const passwordData = await hashPassword(
+      String(body.password || ""),
+      user.password_salt
+    );
+
+    if (
+      passwordData.hash !== user.password_hash
+    ) {
+      return json(
+        {
+          error: "Invalid email or password",
+        },
+        401
+      );
+    }
+
+    const token = await sign(
+      {
+        sub: user.id,
+        exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+      },
+      env.APP_SECRET
+    );
+
+    return json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        business: {
+          name: user.business_name,
+          country: user.country,
+        },
+        role: user.role,
+      },
+    });
+  }
+
+  // AUTHENTICATED ROUTES
+  const user = await auth(request, env);
+
+  // Current user
+  if (
+    url.pathname === "/api/me" &&
+    request.method === "GET"
+  ) {
+    if (!user) {
+      return json(
+        {
+          error: "Unauthorized",
+        },
+        401
+      );
+    }
+
+    return json({
+      user,
+    });
+  }
+
+  if (!user) {
+    return json(
+      {
+        error: "Unauthorized",
+      },
+      401
+    );
+  }
+
+  // SYNC PUSH
+  if (
+    url.pathname === "/api/sync/push" &&
+    request.method === "POST"
+  ) {
+    const body = await request.json();
+
+    const workspace =
+      body.workspace || {};
+
+    const changes =
+      body.changes || [];
+
+    await env.DB.prepare(
+      `INSERT INTO business_records
+        (
+          id,
+          user_id,
+          record_type,
+          data,
+          version,
+          updated_at
+        )
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(user_id, record_type)
+       DO UPDATE SET
+         data = excluded.data,
+         version = excluded.version,
+         updated_at = excluded.updated_at`
+    )
+      .bind(
+        id(),
+        user.id,
+        "workspace",
+        JSON.stringify(workspace),
+        Date.now()
+      )
+      .run();
+
+    await audit(
+      env,
+      user,
+      "SYNC_PUSH",
+      "workspace",
+      user.id,
+      {
+        changes: changes.length,
+      }
+    );
+
+    return json({
+      ok: true,
+    });
+  }
+
+  // SYNC PULL
+  if (
+    url.pathname === "/api/sync/pull" &&
+    request.method === "GET"
+  ) {
+    const record = await env.DB.prepare(
+      `SELECT
+        data,
+        version,
+        updated_at
+       FROM business_records
+       WHERE user_id = ?
+         AND record_type = 'workspace'`
+    )
+      .bind(user.id)
+      .first();
+
+    return json({
+      workspace: record
+        ? JSON.parse(record.data)
+        : null,
+      version: record?.version || 0,
+      updated_at:
+        record?.updated_at || null,
+    });
+  }
+
+  // MASTER DATA
+  if (
+    url.pathname.startsWith("/api/master/") &&
+    request.method === "GET"
+  ) {
+    const table =
+      url.pathname.split("/").pop();
+
+    if (!table) {
+      return json(
+        {
+          error: "Master category missing",
+        },
+        400
+      );
+    }
+
+    const result = await env.DB.prepare(
+      `SELECT
+        id,
+        name,
+        data,
+        status,
+        version,
+        updated_at
+       FROM master_records
+       WHERE category = ?
+       ORDER BY name`
+    )
+      .bind(table)
+      .all();
+
+    return json({
+      rows: result.results || [],
+    });
+  }
+
+  // PUBLISH APPROVAL
+  if (
+    url.pathname === "/api/approvals/publish" &&
+    request.method === "POST"
+  ) {
+    if (
+      !["owner", "admin"].includes(user.role)
+    ) {
+      return json(
+        {
+          error:
+            "Owner/Admin approval required",
+        },
+        403
+      );
+    }
+
+    const body = await request.json();
+
+    const version =
+      body.version || "1.0.0";
+
+    await env.DB.prepare(
+      `INSERT INTO app_releases
+        (
+          id,
+          version,
+          master_snapshot,
+          approved_by,
+          status,
+          created_at
+        )
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`
+    )
+      .bind(
+        id(),
+        version,
+        JSON.stringify(body.master || {}),
+        user.id,
+        "published"
+      )
+      .run();
+
+    await audit(
+      env,
+      user,
+      "PUBLISH",
+      "release",
+      version
+    );
+
+    return json({
+      ok: true,
+      version,
+    });
+  }
+
+  // UPI PAYMENT CREATION
+  if (
+    url.pathname === "/api/payments/upi/create" &&
+    request.method === "POST"
+  ) {
+    const body = await request.json();
+
+    const paymentId = id();
+
+    const amount =
+      Number(body.amount) || 0;
+
+    const currency =
+      body.currency || "INR";
+
+    const reference =
+      body.reference || paymentId;
+
+    await env.DB.prepare(
+      `INSERT INTO payment_transactions
+        (
+          id,
+          user_id,
+          provider,
+          method,
+          amount,
+          currency,
+          status,
+          reference,
+          metadata,
+          created_at
+        )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+      .bind(
+        paymentId,
+        user.id,
+        "provider-pending",
+        "UPI",
+        amount,
+        currency,
+        "created",
+        reference,
+        JSON.stringify(body)
+      )
+      .run();
+
+    return json({
+      ok: true,
+      paymentId,
+      status: "created",
+      message:
+        "Connect an authorized PSP/payment provider adapter for production UPI confirmation.",
+    });
+  }
+
+  // ASSETS / FRONTEND
+  if (!url.pathname.startsWith("/api/")) {
+    return env.ASSETS.fetch(request);
+  }
+
+  // API NOT FOUND
+  return json(
+    {
+      error: "Not found",
+    },
+    404
+  );
+}
+
+export default {
+  async fetch(request, env) {
+    try {
+      return cors(
+        await handle(request, env)
+      );
+    } catch (error) {
+      return cors(
+        json(
+          {
+            error: "Server error",
+            detail: String(
+              error?.message || error
+            ),
+          },
+          500
+        )
+      );
+    }
+  },
+};
