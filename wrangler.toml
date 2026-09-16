@@ -13,3 +13,4 @@ database_id = "5caf94de-b69f-402c-881d-2f7e564a3084"
 
 [vars]
 APP_SECRET = "senquara-one"
+
