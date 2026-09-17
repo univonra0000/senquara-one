@@ -1,66 +1,157 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b1026">
-  <meta name="description" content="SENQUARA ONE — One Platform. Everything Connected.">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="css/app.css?v=5">
-  <link rel="stylesheet" href="css/thermal-printer.css?v=4">
-  <!-- Add this immediately after app.js. Keep all existing code. -->
-<script src="js/user-monitor.js?v=1"></script
-  <title>SENQUARA ONE</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff8ee">
+<title>SENQUARA ONE — Bill Generator</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="auth" class="auth-shell">
-    <div class="auth-card">
-      <div class="brand-mark">SO</div>
-      <div class="brand-name">SENQUARA ONE</div>
-      <div class="brand-tag">One Platform. Everything Connected.</div>
-      <section id="registerView">
-        <h1>Create your account</h1>
-        <p class="muted">Register once. Your next visit opens the login page.</p>
-        <form id="registerForm">
-          <label>Owner name<input id="regName" required autocomplete="name"></label>
-          <label>Business / company name<input id="regBusiness" required></label>
-          <label>Email<input id="regEmail" type="email" required autocomplete="email"></label>
-          <label>Mobile number<input id="regMobile" inputmode="tel" required></label>
-          <label>Password<input id="regPassword" type="password" minlength="6" required autocomplete="new-password"></label>
-          <label>Country<select id="regCountry"></select></label>
-          <button class="primary full" type="submit">Create SENQUARA ONE account</button>
-        </form>
-        <button class="link-btn" id="showLogin">Already registered? Login</button>
-      </section>
-      <section id="loginView" class="hidden">
-        <h1>Welcome back</h1>
-        <p class="muted">Sign in to continue to your SENQUARA ONE workspace.</p>
-        <form id="loginForm">
-          <label>Email<input id="loginEmail" type="email" required autocomplete="email"></label>
-          <label>Password<input id="loginPassword" type="password" required autocomplete="current-password"></label>
-          <button class="primary full" type="submit">Login</button>
-        </form>
-        <button class="link-btn" id="showRegister">Create a new account</button>
-        <button class="link-btn" id="forgotPassword">Forgot password?</button>
-      </section>
-      <div id="authMsg" class="notice hidden"></div>
-    </div>
+<div class="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <div class="brand"><b>SENQUARA ONE</b><span>One Platform. Everything Connected.</span></div>
+    <button class="avatar" id="profileBtn">SO</button>
+  </header>
+
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head"><b>Menu</b><button class="icon-btn" id="closeMenu">×</button></div>
+    <button class="nav-item active" data-view="dashboard">⌂ Dashboard</button>
+    <button class="nav-item" data-view="billing">▣ Bill Generator</button>
+    <button class="nav-item" data-view="products">▤ Products</button>
+    <button class="nav-item" data-view="customers">♙ Customers</button>
+    <button class="nav-item" data-view="invoices">▧ Invoices</button>
+    <button class="nav-item" data-view="ipmodel">◉ IP Base Model</button>
+    <button class="nav-item" data-view="settings">⚙ Settings</button>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main>
+    <section class="view active" id="dashboard">
+      <div class="hero">
+        <div>
+          <h1>Welcome</h1>
+          <p>SENQUARA ONE — One Platform. Everything Connected.</p>
+        </div>
+        <button class="btn primary" data-open-billing>＋ New Bill</button>
+      </div>
+      <div class="stats">
+        <div class="card stat"><span>Sales</span><strong id="dashSales">₹0.00</strong></div>
+        <div class="card stat"><span>Payments Received</span><strong id="dashPayments">₹0.00</strong></div>
+        <div class="card stat"><span>Customers</span><strong id="dashCustomers">0</strong></div>
+        <div class="card stat"><span>Products</span><strong id="dashProducts">0</strong></div>
+        <div class="card stat"><span>Stock Units</span><strong id="dashStock">0</strong></div>
+        <div class="card stat"><span>Invoices</span><strong id="dashInvoices">0</strong></div>
+        <div class="card stat"><span>Receivables</span><strong id="dashReceivables">₹0.00</strong></div>
+        <div class="card stat"><span>Pending Sync</span><strong id="dashSync">0</strong></div>
+      </div>
+    </section>
+
+    <section class="view" id="billing">
+      <div class="page-title"><h1>Bill Generator</h1><p>Mobile-first invoice creation with live calculation.</p></div>
+      <form id="billForm" class="card form-card">
+        <div class="grid two">
+          <label>Invoice Number<input id="invoiceNo" required></label>
+          <label>Date<input id="invoiceDate" type="date" required></label>
+          <label>Customer
+            <select id="customer"></select>
+          </label>
+          <label>Place of Supply<input id="placeSupply" placeholder="State / Country"></label>
+          <label>Invoice Type
+            <select id="invoiceType"><option>Domestic</option><option>International</option></select>
+          </label>
+          <label>Tax Mode
+            <select id="taxMode"><option value="auto">Auto GST</option><option value="intra">CGST + SGST</option><option value="inter">IGST</option><option value="zero">Zero Tax</option></select>
+          </label>
+        </div>
+
+        <div class="section-head"><h2>Items</h2><button type="button" class="btn small" id="addItem">＋ Add item</button></div>
+        <div id="items"></div>
+
+        <div class="totals card-inner">
+          <div><span>Taxable</span><b id="taxable">₹0.00</b></div>
+          <div><span>CGST</span><b id="cgst">₹0.00</b></div>
+          <div><span>SGST</span><b id="sgst">₹0.00</b></div>
+          <div><span>IGST</span><b id="igst">₹0.00</b></div>
+          <div class="grand"><span>Grand Total</span><b id="grand">₹0.00</b></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn" id="previewBtn">Preview</button>
+          <button type="submit" class="btn primary">Save Bill</button>
+          <button type="button" class="btn" id="printBtn">Print</button>
+        </div>
+        <div id="billMsg" class="message"></div>
+      </form>
+    </section>
+
+    <section class="view" id="products">
+      <div class="page-title"><h1>Products</h1><p>Add products used by the bill generator.</p></div>
+      <form class="card form-card" id="productForm">
+        <div class="grid two">
+          <label>Product Name<input id="pName" required></label>
+          <label>SKU / Barcode<input id="pSku"></label>
+          <label>Rate (₹)<input id="pRate" type="number" min="0" step="0.01" required></label>
+          <label>GST %<input id="pGst" type="number" min="0" max="100" step="0.01" value="18"></label>
+          <label>Stock Units<input id="pStock" type="number" min="0" step="1" value="0"></label>
+        </div>
+        <button class="btn primary">Add Product</button>
+        <div id="productList"></div>
+      </form>
+    </section>
+
+    <section class="view" id="customers">
+      <div class="page-title"><h1>Customers</h1><p>Customer records for billing.</p></div>
+      <form class="card form-card" id="customerForm">
+        <div class="grid two">
+          <label>Name<input id="cName" required></label>
+          <label>Mobile<input id="cMobile" inputmode="tel"></label>
+          <label>Email<input id="cEmail" type="email"></label>
+          <label>GSTIN / Tax ID<input id="cTax"></label>
+        </div>
+        <button class="btn primary">Add Customer</button>
+        <div id="customerList"></div>
+      </form>
+    </section>
+
+    <section class="view" id="invoices">
+      <div class="page-title"><h1>Invoices</h1><p>Saved bills stored locally on this device.</p></div>
+      <div class="card table-card" id="invoiceList"></div>
+    </section>
+
+    <section class="view" id="ipmodel">
+      <div class="page-title"><h1>IP Base Model</h1><p>Connection/device identity information. Public IP lookup is optional.</p></div>
+      <div class="card info-card">
+        <div class="info-row"><span>Connection</span><b id="onlineState">Checking…</b></div>
+        <div class="info-row"><span>Public IP</span><b id="publicIp">Not loaded</b></div>
+        <div class="info-row"><span>Platform</span><b id="platform">—</b></div>
+        <div class="info-row"><span>Browser</span><b id="browser">—</b></div>
+        <button class="btn primary" id="ipRefresh">Refresh IP</button>
+        <p class="hint">The IP Base Model menu is now always visible. IP lookup is only performed when you press Refresh IP.</p>
+      </div>
+    </section>
+
+    <section class="view" id="settings">
+      <div class="page-title"><h1>Settings</h1><p>Local settings and data controls.</p></div>
+      <div class="card form-card">
+        <label>Business Name<input id="businessName" value="SENQUARA ONE"></label>
+        <label>Address / Contact<textarea id="businessContact">One Platform. Everything Connected.</textarea></label>
+        <div class="actions">
+          <button class="btn primary" id="saveSettings">Save Settings</button>
+          <button class="btn danger" id="clearData">Clear Local Data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="previewModal">
+  <div class="modal-box">
+    <button class="modal-close" id="previewClose">×</button>
+    <div id="invoicePreview"></div>
   </div>
-  <div id="app" class="app hidden">
-    <aside id="sidebar" class="sidebar">
-      <div class="side-brand"><div class="side-logo">SO</div><div><strong>SENQUARA ONE</strong><small>Connected business platform</small></div></div>
-      <nav id="nav"></nav>
-      <div class="side-bottom"><div id="connectionBadge" class="status offline">Offline-ready</div><button id="logoutBtn" class="ghost full">Log out</button></div>
-    </aside>
-    <div id="overlay" class="overlay"></div>
-    <main class="main">
-      <header class="topbar"><button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button><div class="top-title"><strong id="pageTitle">Dashboard</strong><span id="deviceMode">Web</span></div><div class="top-actions"><button id="syncBtn" class="soft-btn">↻ Sync</button><button id="installBtn" class="soft-btn hidden">Install</button><button id="profileBtn" class="avatar">SO</button></div></header>
-      <div id="content" class="content"></div>
-    </main>
-  </div>
-  <div id="modalRoot"></div><div id="toastRoot" class="toast-root"></div>
-  <script src="js/app.js"></script>
-  <script src="js/print-tools.js?v=1"></script>
-  
+</div>
+<script src="app.js"></script>
 </body>
 </html>
