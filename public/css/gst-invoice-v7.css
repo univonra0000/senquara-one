@@ -1,0 +1,4 @@
+/* MERGE CSS — load after existing CSS */
+button,input,select,textarea,.card,.item,.modal-card{box-shadow:0 3px 10px rgba(20,25,45,.10)}
+input,select,textarea{min-height:42px}
+@media(max-width:700px){.item-grid{grid-template-columns:1fr!important}.modal-card{width:calc(100vw - 20px)!important;max-height:92vh;overflow:auto}}
