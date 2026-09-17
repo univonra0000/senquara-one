@@ -1,0 +1,2 @@
+<!-- Add this immediately after app.js. Keep all existing code. -->
+<script src="js/user-monitor.js?v=1"></script>
