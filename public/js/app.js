@@ -1,122 +1,132 @@
-const API_BASE=location.origin;
-const TOKEN_KEY='senquara_access_token';
-const LOCAL_KEY='senquara_one_workspace_v4';
-const DEFAULT={profile:null,business:{name:'',country:'India',currency:'INR',owner:'',gstin:'',address:'',phone:'',email:'',logo:''},people:[],products:[],invoices:[],payments:[],expenses:[],quotes:[],orders:[],receipts:[],returns:[],trade:[],taxProfiles:[{id:'gst5',name:'GST 5%',rate:5},{id:'gst12',name:'GST 12%',rate:12},{id:'gst18',name:'GST 18%',rate:18},{id:'gst28',name:'GST 28%',rate:28}],paymentMethods:[{id:'cash',name:'Cash',status:'active'},{id:'upi',name:'UPI',status:'active'},{id:'bank',name:'Bank Transfer',status:'active'},{id:'card',name:'Card',status:'active'},{id:'credit',name:'Credit',status:'active'}],roles:[{id:'owner',name:'Owner/Admin',permissions:['view','create','edit','delete','approve','export']},{id:'manager',name:'Manager',permissions:['view','create','edit','approve','export']},{id:'accountant',name:'Accountant',permissions:['view','create','edit','export']},{id:'billing',name:'Billing Operator',permissions:['view','create']},{id:'inventory',name:'Inventory Manager',permissions:['view','create','edit']},{id:'sales',name:'Salesperson',permissions:['view','create']},{id:'viewer',name:'Viewer',permissions:['view']}],terms:[{id:'general',name:'General Terms',text:'Goods once sold are subject to applicable business terms.'},{id:'payment',name:'Payment Terms',text:'Payment is due as agreed on the invoice.'}],customData:[],invoiceSettings:{prefix:'INV-',next:1},deployment:{mode:'live',version:'1.0.0'}};
-let state=load();
+const KEY="senquara_one_v2";
+const state=JSON.parse(localStorage.getItem(KEY)||'{"products":[],"customers":[],"invoices":[],"settings":{"businessName":"SENQUARA ONE","businessContact":"One Platform. Everything Connected."}}');
 const $=id=>document.getElementById(id);
-function clone(x){return JSON.parse(JSON.stringify(x))}
-function load(){try{return deepMerge(clone(DEFAULT),JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}'))}catch{return clone(DEFAULT)}}
-function deepMerge(a,b){if(!b||typeof b!=='object')return a;for(const k of Object.keys(b)){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')a[k]=deepMerge(a[k],b[k]);else a[k]=b[k]}return a}
-function save(){localStorage.setItem(LOCAL_KEY,JSON.stringify(state))}
-function token(){return localStorage.getItem(TOKEN_KEY)||''}
-async function api(path,opt={}){const headers=Object.assign({'Content-Type':'application/json'},opt.headers||{});if(token())headers.Authorization='Bearer '+token();const r=await fetch(API_BASE+path,{...opt,headers});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error+(d.detail?': '+d.detail:'')||'Request failed');return d}
-function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currency:state.business.currency||'INR',maximumFractionDigits:2}).format(Number(n)||0)}
-function toast(msg){const e=document.createElement('div');e.className='toast';e.textContent=msg;$('toastRoot').appendChild(e);setTimeout(()=>e.remove(),3200)}
-function authMsg(msg,bad=false){const e=$('authMsg');e.textContent=msg;e.classList.remove('hidden');e.style.borderColor=bad?'#8b3344':'var(--border)'}
-function setAuth(login){$('registerView').classList.toggle('hidden',login);$('loginView').classList.toggle('hidden',!login);$('authMsg').classList.add('hidden')}
-$('showLogin').onclick=()=>setAuth(true);$('showRegister').onclick=()=>setAuth(false);
-$('registerForm').onsubmit=async e=>{e.preventDefault();const p={name:$('regName').value.trim(),businessName:$('regBusiness').value.trim(),email:$('regEmail').value.trim(),mobile:$('regMobile').value.trim(),password:$('regPassword').value,country:$('regCountry').value};try{const d=await api('/api/auth/register',{method:'POST',body:JSON.stringify(p)});localStorage.setItem(TOKEN_KEY,d.token);state.profile=d.user;state.business={...state.business,name:p.businessName,country:p.country,owner:p.name,phone:p.mobile,email:p.email};save();openApp()}catch(err){authMsg(err.message,true)}};
-$('loginForm').onsubmit=async e=>{e.preventDefault();try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:$('loginEmail').value,password:$('loginPassword').value})});localStorage.setItem(TOKEN_KEY,d.token);state.profile=d.user;state.business={...state.business,...(d.user.business||{}),owner:d.user.name,phone:d.user.mobile,email:d.user.email};save();openApp()}catch(err){authMsg(err.message,true)}};
-$('forgotPassword').onclick=()=>authMsg('Password reset requires a production email/reset service.');
-$('logoutBtn').onclick=()=>{localStorage.removeItem(TOKEN_KEY);$('app').classList.add('hidden');$('auth').classList.remove('hidden');setAuth(true)};
-$('menuBtn').onclick=()=>{$('sidebar').classList.toggle('open');$('overlay').classList.toggle('hidden')};$('overlay').onclick=()=>{$('sidebar').classList.remove('open');$('overlay').classList.add('hidden')};$('syncBtn').onclick=sync;$('installBtn').onclick=()=>navigator.serviceWorker?.register('/sw.js').then(()=>toast('Installable app is ready'));
-function openApp(){$('auth').classList.add('hidden');$('app').classList.remove('hidden');buildNav();showPage('dashboard');if(location.protocol==='https:')navigator.serviceWorker?.register('/sw.js').catch(()=>{});loadRemote();}
-function buildNav(){const nav=[['dashboard','🏠 Dashboard'],['business','💼 Business Hub'],['people','👥 People & Partners'],['products','📦 Products & Inventory'],['finance','💰 Money & Payments'],['trade','🌐 Global Trade'],['tax','🧾 Tax & Compliance'],['reports','📊 Analytics & Reports'],['users','👤 Users & Roles'],['settings','⚙️ Settings'],['master','🛠 Master Panel']];$('nav').innerHTML=nav.map(([id,t])=>`<button class="nav-btn" data-page="${id}">${t}</button>`).join('');document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>showPage(b.dataset.page))}
-const pageTitles={dashboard:'Dashboard',business:'Business Hub',people:'People & Partners',products:'Products & Inventory',finance:'Money & Payments',trade:'Global Trade',tax:'Tax & Compliance',reports:'Analytics & Reports',users:'Users & Roles',settings:'Settings',master:'Master Panel'};
-function showPage(page){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('pageTitle').textContent=pageTitles[page]||page;$('content').innerHTML=pages[page]();wirePage(page);$('sidebar').classList.remove('open')}
-function stat(label,value){return `<div class="card"><div class="label">${esc(label)}</div><div class="value">${value}</div></div>`}
-const pages={
- dashboard:()=>{const sales=state.invoices.reduce((a,x)=>a+(x.grandTotal||0),0),paid=state.payments.reduce((a,x)=>a+(x.amount||0),0),stock=state.products.reduce((a,x)=>a+(Number(x.stock)||0),0);return `<div class="page-head"><div><h1>Welcome${state.profile?.name?' '+esc(state.profile.name):''}</h1><p class="muted">SENQUARA ONE — One Platform. Everything Connected.</p></div><div class="actions"><button class="primary" id="newInvoice">＋ New GST Invoice</button><button class="soft-btn" id="dashPrint">Print</button></div></div><div class="grid">${stat('Sales',money(sales))}${stat('Payments Received',money(paid))}${stat('Customers',state.people.length)}${stat('Products',state.products.length)}</div><div class="grid">${stat('Stock Units',stock)}${stat('Invoices',state.invoices.length)}${stat('Receivables',money(sales-paid))}${stat('Pending Sync',pendingCount())}</div><div class="two"><div class="card"><h3>Business snapshot</h3><p>${esc(state.business.name||'Not configured')}</p><p class="muted">${esc(state.business.gstin||'GSTIN not configured')} · ${esc(state.business.phone||'')}</p><p class="muted">${esc(state.business.address||'Address not configured')}</p></div><div class="card"><h3>Quick tools</h3><div class="actions"><button class="soft-btn" id="quickCustomer">＋ Customer</button><button class="soft-btn" id="quickProduct">＋ Product</button><button class="soft-btn" id="quickPayment">＋ Payment</button><button class="soft-btn" id="dashSync">↻ Sync</button></div></div></div>`},
- business:()=>hubPage(),
- people:()=>listPage('People & Partners','people',state.people,['name','type','contact','gstin','city']),
- products:()=>listPage('Products & Inventory','products',state.products,['name','sku','hsn','price','gstRate','stock']),
- finance:()=>financePage(),
- trade:()=>listPage('Global Trade','trade',state.trade,['type','partner','currency','documentNo','status']),
- tax:()=>taxPage(),
- reports:()=>reportsPage(),
- users:()=>usersPage(),
- settings:()=>settingsPage(),
- master:()=>masterPage()
+const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(Number(n)||0);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+
+function today(){return new Date().toISOString().slice(0,10)}
+function nextInvoice(){return "INV-"+String(state.invoices.length+1).padStart(5,"0")}
+$("invoiceDate").value=today(); $("invoiceNo").value=nextInvoice();
+
+function openView(id){
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+ $(id).classList.add("active");
+ document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+ closeDrawer(); if(id==="billing") renderItems(); if(id==="products") renderProducts(); if(id==="customers") renderCustomers(); if(id==="invoices") renderInvoices(); if(id==="ipmodel") loadIP(); updateDashboard();
+}
+document.querySelectorAll(".nav-item").forEach(b=>b.onclick=()=>openView(b.dataset.view));
+document.querySelectorAll("[data-open-billing]").forEach(b=>b.onclick=()=>openView("billing"));
+$("menuBtn").onclick=()=>{ $("drawer").classList.add("open"); $("scrim").classList.add("show") };
+$("closeMenu").onclick=$("scrim").onclick=closeDrawer;
+function closeDrawer(){$("drawer").classList.remove("open");$("scrim").classList.remove("show")}
+
+function productOptions(){
+ return '<option value="">Select product</option>'+state.products.map((p,i)=>`<option value="${i}">${esc(p.name)} — ${money(p.rate)} — GST ${p.gst}%</option>`).join("");
+}
+function renderItems(){
+ const wrap=$("items");
+ if(!wrap.children.length) addItem();
+ [...wrap.children].forEach(row=>{
+   const sel=row.querySelector(".product");
+   const idx=sel.value;
+   if(idx!=="" && state.products[idx]){
+     const p=state.products[idx];
+     row.querySelector(".rate").value=p.rate;
+     row.querySelector(".gst").value=p.gst;
+   }
+ });
+ calc();
+}
+function addItem(){
+ const row=document.createElement("div"); row.className="item";
+ row.innerHTML=`<div class="item-grid">
+   <label class="wide">Product<select class="product">${productOptions()}</select></label>
+   <label>Qty<input class="qty" type="number" min="0.01" step="0.01" value="1"></label>
+   <label>Rate<input class="rate" type="number" min="0" step="0.01" value="0"></label>
+   <label>GST %<input class="gst" type="number" min="0" max="100" step="0.01" value="18"></label>
+   <button type="button" class="remove">Remove</button>
+ </div>`;
+ row.querySelector(".product").onchange=()=>{
+   const p=state.products[row.querySelector(".product").value];
+   if(p){row.querySelector(".rate").value=p.rate;row.querySelector(".gst").value=p.gst}
+   calc()
+ };
+ row.querySelectorAll("input").forEach(x=>x.oninput=calc);
+ row.querySelector(".remove").onclick=()=>{row.remove();if(!wrap.children.length)addItem();calc()};
+ wrap.appendChild(row); calc();
+}
+$("addItem").onclick=addItem;
+
+function calc(){
+ let taxable=0,cg=0,sg=0,ig=0;
+ document.querySelectorAll("#items .item").forEach(r=>{
+  const q=+r.querySelector(".qty").value||0, rate=+r.querySelector(".rate").value||0, gst=+r.querySelector(".gst").value||0;
+  const base=q*rate; taxable+=base;
+  const mode=$("taxMode").value;
+  if(mode==="intra" || (mode==="auto" && gst>0 && $("placeSupply").value.trim())){
+    cg+=base*gst/200; sg+=base*gst/200;
+  }else if(mode==="inter" || (mode==="auto" && gst>0)){
+    ig+=base*gst/100;
+  }
+ });
+ $("taxable").textContent=money(taxable);$("cgst").textContent=money(cg);$("sgst").textContent=money(sg);$("igst").textContent=money(ig);$("grand").textContent=money(taxable+cg+sg+ig);
+}
+$("taxMode").onchange=calc;$("placeSupply").oninput=calc;
+
+$("billForm").onsubmit=e=>{
+ e.preventDefault(); calc();
+ const items=[...document.querySelectorAll("#items .item")].map(r=>({product:r.querySelector(".product").value,qty:+r.querySelector(".qty").value||0,rate:+r.querySelector(".rate").value||0,gst:+r.querySelector(".gst").value||0})).filter(x=>x.qty>0);
+ if(!items.length){$("billMsg").textContent="Add at least one item.";return}
+ const inv={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),no:$("invoiceNo").value,date:$("invoiceDate").value,customer:$("customer").value,place:$("placeSupply").value,type:$("invoiceType").value,mode:$("taxMode").value,items,total:parseFloat($("grand").textContent.replace(/[₹,]/g,""))||0};
+ state.invoices.push(inv);save();$("billMsg").textContent="Bill saved successfully."; $("invoiceNo").value=nextInvoice(); updateDashboard(); renderInvoices();
 };
-function hubPage(){const docs=[['quotes','Quotes'],['orders','Orders'],['receipts','Receipts'],['returns','Returns']];return `<div class="page-head"><div><h1>Business Hub</h1><p class="muted">Sales, invoices, quotes, orders, receipts and returns.</p></div><div class="actions"><button class="primary" id="hubInvoice">＋ GST Invoice</button><button class="soft-btn" id="hubQuote">＋ Quote</button><button class="soft-btn" id="hubOrder">＋ Order</button></div></div><div class="grid">${stat('Invoices',state.invoices.length)}${docs.map(x=>stat(x[1],state[x[0]].length)).join('')}</div><div class="card"><h3>Recent invoices</h3>${invoiceTable(state.invoices.slice().reverse().slice(0,10))}</div>`}
-function invoiceTable(rows){return `<div class="table-wrap"><table class="table"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Taxable</th><th>GST</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map((x,i)=>`<tr><td>${esc(x.number)}</td><td>${esc(x.date)}</td><td>${esc(x.customerName||'Cash Sale')}</td><td>${money(x.taxable)}</td><td>${money(x.gst)}</td><td><b>${money(x.grandTotal)}</b></td><td>${esc(x.status||'issued')}</td><td><button class="soft-btn" data-print-invoice="${esc(x.id)}" data-print-size="80">80mm</button> <button class="soft-btn" data-print-invoice="${esc(x.id)}" data-print-size="58">58mm</button> <button class="soft-btn" data-print-invoice="${esc(x.id)}" data-print-size="A4">A4</button></td></tr>`).join(''):`<tr><td colspan="8" class="empty">No invoices yet.</td></tr>`}</tbody></table></div>`}
-function listPage(title,type,rows,fields){return `<div class="page-head"><div><h1>${title}</h1><p class="muted">Cloud-synced business records with offline-ready local cache.</p></div><div class="actions"><button class="primary" id="addRecord">＋ Add</button><button class="soft-btn" id="refreshRecord">↻ Refresh</button></div></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr>${fields.map(f=>`<th>${label(f)}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${rows.length?rows.map((x,i)=>`<tr>${fields.map(f=>`<td>${esc(displayValue(x,f))}</td>`).join('')}<td><button class="soft-btn" data-edit-record="${i}">Edit</button> <button class="soft-btn" data-delete-record="${i}">Delete</button></td></tr>`).join(''):`<tr><td colspan="${fields.length+1}" class="empty">No records yet.</td></tr>`}</tbody></table></div></div>`}
-function label(f){return ({name:'Name',type:'Type',contact:'Contact',gstin:'GSTIN',city:'City',sku:'SKU',hsn:'HSN/SAC',price:'Price',gstRate:'GST %',stock:'Stock',partner:'Partner',currency:'Currency',documentNo:'Document No',status:'Status'}[f]||f)}
-function displayValue(x,f){if(f==='price')return money(x[f]);if(f==='gstRate')return `${x[f]||0}%`;return x[f]??''}
-function financePage(){const total=state.payments.reduce((a,x)=>a+Number(x.amount||0),0),exp=state.expenses.reduce((a,x)=>a+Number(x.amount||0),0);return `<div class="page-head"><div><h1>Money & Payments</h1><p class="muted">Receipts, payments, expenses and balances.</p></div><div class="actions"><button class="primary" id="addPayment">＋ Payment</button><button class="soft-btn" id="addExpense">＋ Expense</button></div></div><div class="grid">${stat('Received',money(total))}${stat('Expenses',money(exp))}${stat('Net',money(total-exp))}</div><div class="two"><div class="card"><h3>Payments</h3>${simpleTable(state.payments,['reference','method','amount','status'])}</div><div class="card"><h3>Expenses</h3>${simpleTable(state.expenses,['reference','category','amount','status'])}</div></div>`}
-function simpleTable(rows,fields){return `<div class="table-wrap"><table class="table"><thead><tr>${fields.map(label).map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${fields.map(f=>`<td>${esc(f==='amount'?money(r[f]):r[f])}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${fields.length}" class="empty">No records.</td></tr>`}</tbody></table></div>`}
-function taxPage(){return `<div class="page-head"><div><h1>Tax & Compliance</h1><p class="muted">GST/VAT/Sales Tax profiles, HSN/SAC and invoice tax rules.</p></div><button class="primary" id="addTax">＋ Tax Profile</button></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>Name</th><th>Rate</th><th>Actions</th></tr></thead><tbody>${state.taxProfiles.map((x,i)=>`<tr><td>${esc(x.id)}</td><td>${esc(x.name)}</td><td>${esc(x.rate)}%</td><td><button class="soft-btn" data-tax-edit="${i}">Edit</button></td></tr>`).join('')}</tbody></table></div></div><div class="card"><h3>India GST invoice logic</h3><p class="muted">Same-state: CGST + SGST. Inter-state: IGST. Taxable value, tax and grand total are calculated per line and rounded to 2 decimals.</p></div>`}
-function reportsPage(){const sales=state.invoices.reduce((a,x)=>a+x.grandTotal,0),tax=state.invoices.reduce((a,x)=>a+x.gst,0),stock=state.products.reduce((a,x)=>a+(Number(x.stock)||0),0);return `<div class="page-head"><div><h1>Analytics & Reports</h1><p class="muted">Operational, sales, inventory and tax summaries.</p></div><button class="primary" id="exportReport">Export CSV</button></div><div class="grid">${stat('Gross Sales',money(sales))}${stat('GST Collected',money(tax))}${stat('Inventory Units',stock)}${stat('Customers',state.people.length)}</div><div class="two"><div class="card"><h3>Sales by invoice</h3>${invoiceTable(state.invoices.slice(-20).reverse())}</div><div class="card"><h3>Inventory alert</h3>${state.products.filter(x=>Number(x.stock)<=Number(x.reorder||5)).map(x=>`<p>⚠️ ${esc(x.name)} — ${esc(x.stock)} units</p>`).join('')||'<p class="muted">No low-stock alerts.</p>'}</div></div>`}
-function usersPage(){return `<div class="page-head"><div><h1>Users & Roles</h1><p class="muted">Owner/Admin can assign roles. New users register through the secure account flow.</p></div><button class="soft-btn" id="refreshUsers">↻ Refresh</button></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Role</th><th>Created</th><th>Action</th></tr></thead><tbody>${(state.remoteUsers||[state.profile]).filter(Boolean).map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${esc(u.mobile)}</td><td><select data-role-user="${esc(u.id)}">${state.roles.map(r=>`<option value="${esc(r.id)}" ${r.id===u.role?'selected':''}>${esc(r.name)}</option>`).join('')}</select></td><td>${esc((u.created_at||'').slice(0,10))}</td><td><button class="soft-btn" data-save-role="${esc(u.id)}">Save</button></td></tr>`).join('')}</tbody></table></div></div>`}
-function settingsPage(){return `<div class="page-head"><div><h1>Settings</h1><p class="muted">Business identity, GSTIN, contact, invoice numbering and print settings.</p></div><button class="primary" id="saveSettings">Save settings</button></div><div class="card"><form id="settingsForm"><div class="two"><label>Business name<input id="sName" value="${esc(state.business.name)}" required></label><label>Owner name<input id="sOwner" value="${esc(state.business.owner)}"></label><label>GSTIN<input id="sGstin" value="${esc(state.business.gstin)}" placeholder="22AAAAA0000A1Z5"></label><label>Country<select id="sCountry">${countryOptions(state.business.country)}</select></label><label>Phone<input id="sPhone" value="${esc(state.business.phone)}"></label><label>Email<input id="sEmail" value="${esc(state.business.email)}" type="email"></label><label>Currency<select id="sCurrency"><option value="INR">INR ₹</option><option value="USD">USD $</option><option value="EUR">EUR €</option><option value="GBP">GBP £</option></select></label><label>Invoice prefix<input id="sPrefix" value="${esc(state.invoiceSettings.prefix)}"></label><label>Next invoice number<input id="sNext" type="number" min="1" value="${state.invoiceSettings.next}"></label></div><label>Business address<textarea id="sAddress" rows="4">${esc(state.business.address)}</textarea></label><label>Logo URL (optional)<input id="sLogo" value="${esc(state.business.logo)}" placeholder="https://..."></label></form></div><div class="card"><h3>Invoice printing</h3><p class="muted">A4, 80mm and 58mm thermal layouts are supported from the invoice print window. QR code is placed at the end; barcode can be included for the invoice number.</p></div>`}
-function masterPage(){return `<div class="page-head"><div><h1>Master Panel</h1><p class="muted">Demo configuration, tax/payment/role masters, terms and export/import.</p></div><div class="actions"><button class="soft-btn" id="exportMaster">Export JSON</button><button class="soft-btn" id="importMaster">Import JSON</button><input id="masterFile" type="file" accept="application/json" class="hidden"></div></div><div class="grid">${stat('Tax Profiles',state.taxProfiles.length)}${stat('Payment Methods',state.paymentMethods.length)}${stat('Roles',state.roles.length)}${stat('Terms',state.terms.length)}</div><div class="card"><h3>Tax Profiles</h3>${simpleTable(state.taxProfiles,['id','name','rate'])}</div><div class="card"><h3>Payment Methods</h3>${simpleTable(state.paymentMethods,['id','name','status'])}</div><div class="card"><h3>Roles & Permissions</h3>${state.roles.map(r=>`<p><b>${esc(r.name)}</b>: ${esc(r.permissions.join(', '))}</p>`).join('')}</div><div class="card"><h3>Terms & Conditions</h3>${state.terms.map(r=>`<p><b>${esc(r.name)}</b>: ${esc(r.text)}</p>`).join('')}</div>`}
-function countryOptions(selected){const cs=['India','United States','United Kingdom','United Arab Emirates','Singapore','Australia','Canada','Germany','France','Japan','Other'];return cs.map(c=>`<option ${c===selected?'selected':''}>${c}</option>`).join('')}
-function pendingCount(){return Number(state._pending||0)}
-function queueSave(){state._pending=(state._pending||0)+1;save()}
-async function saveType(type){const data=type==='settings'?{business:state.business}:state[type];await api('/api/data',{method:'PUT',body:JSON.stringify({type,data})});state._pending=0;save()}
-async function sync(){if(!token()){toast('Login is required for cloud sync');return}try{for(const type of ['people','products','invoices','payments','expenses','quotes','orders','receipts','returns','trade','taxProfiles','paymentMethods','roles','terms','customData','invoiceSettings'])await saveType(type);await saveType('settings');state._pending=0;save();toast('Cloud sync complete')}catch(e){toast('Sync failed: '+e.message)}}
-async function loadRemote(){if(!token())return;try{const types=['people','products','invoices','payments','expenses','quotes','orders','receipts','returns','trade','taxProfiles','paymentMethods','roles','terms','customData','invoiceSettings','settings'];for(const type of types){const d=await api('/api/data?type='+encodeURIComponent(type));if(d.version&&d.data!==undefined){if(type==='settings')state.business={...state.business,...(d.data.business||{})};else state[type]=d.data}}const d=await api('/api/users').catch(()=>null);if(d)state.remoteUsers=d.users;save();refreshConnection();showPage(document.querySelector('.nav-btn.active')?.dataset.page||'dashboard')}catch(e){refreshConnection(false)}}
-function refreshConnection(ok=true){const e=$('connectionBadge');e.className='status '+(token()&&ok?'online':'offline');e.textContent=token()&&ok?'Online • Cloud connected':'Offline-ready'}
-function wirePage(page){
- if(page==='dashboard'){$('newInvoice').onclick=()=>openInvoice();$('dashSync').onclick=sync;$('quickCustomer').onclick=()=>openRecord('people');$('quickProduct').onclick=()=>openRecord('products');$('quickPayment').onclick=()=>openMoney('payment');$('dashPrint').onclick=()=>toast('Open an invoice from Business Hub to print')}
- if(page==='business'){$('hubInvoice').onclick=()=>openInvoice();$('hubQuote').onclick=()=>openRecord('quotes');$('hubOrder').onclick=()=>openRecord('orders');document.querySelectorAll('[data-print-invoice]').forEach(b=>b.onclick=()=>printInvoice(state.invoices.find(x=>x.id===b.dataset.printInvoice),b.dataset.printSize||'80mm'))}
- if(['people','products','trade'].includes(page)){const type=page;$('addRecord').onclick=()=>openRecord(type);$('refreshRecord').onclick=()=>loadRemote();document.querySelectorAll('[data-edit-record]').forEach(b=>b.onclick=()=>openRecord(type,+b.dataset.editRecord));document.querySelectorAll('[data-delete-record]').forEach(b=>b.onclick=()=>deleteRecord(type,+b.dataset.deleteRecord))}
- if(page==='finance'){$('addPayment').onclick=()=>openMoney('payment');$('addExpense').onclick=()=>openMoney('expense')}
- if(page==='tax'){$('addTax').onclick=()=>openTax();document.querySelectorAll('[data-tax-edit]').forEach(b=>b.onclick=()=>openTax(+b.dataset.taxEdit))}
- if(page==='reports')$('exportReport').onclick=()=>download('senquara-report.csv',reportCSV(),'text/csv')
- if(page==='users'){$('refreshUsers').onclick=loadRemote;document.querySelectorAll('[data-save-role]').forEach(b=>b.onclick=()=>saveRole(b.dataset.saveRole))}
- if(page==='settings'){$('sCurrency').value=state.business.currency||'INR';$('saveSettings').onclick=saveSettings}
- if(page==='master'){$('exportMaster').onclick=()=>download('senquara-master.json',JSON.stringify({taxProfiles:state.taxProfiles,paymentMethods:state.paymentMethods,roles:state.roles,terms:state.terms,customData:state.customData},null,2),'application/json');$('importMaster').onclick=()=>$('masterFile').click();$('masterFile').onchange=importMaster}
+
+function renderProducts(){
+ $("productList").innerHTML=state.products.length?state.products.map((p,i)=>`<div class="list-row"><span><b>${esc(p.name)}</b><br><small>${esc(p.sku||"")} · GST ${p.gst}% · Stock ${p.stock}</small></span><b>${money(p.rate)}</b></div>`).join(""):"<p class='hint'>No products yet.</p>";
 }
-function modal(html){$('modalRoot').innerHTML=`<div class="modal-backdrop"><div class="modal">${html}</div></div>`}
-function closeModal(){$('modalRoot').innerHTML=''}
-function openRecord(type,i=null){const arr=state[type];const old=i==null?{}:arr[i];const fields={people:[['name','Name'],['type','Type (Customer/Dealer/Retailer/Supplier)'],['contact','Mobile / Contact'],['email','Email'],['gstin','GSTIN'],['address','Address'],['city','City']],products:[['name','Product name'],['sku','SKU / Barcode'],['hsn','HSN/SAC'],['price','Selling price'],['cost','Purchase cost'],['gstRate','GST %'],['stock','Stock'],['reorder','Reorder level'],['unit','Unit']],trade:[['type','Document type'],['partner','Partner'],['currency','Currency'],['documentNo','Document number'],['status','Status'],['notes','Notes']],quotes:[['reference','Quote number'],['customerName','Customer'],['amount','Amount'],['status','Status'],['date','Date']],orders:[['reference','Order number'],['customerName','Customer'],['amount','Amount'],['status','Status'],['date','Date']],receipts:[['reference','Receipt number'],['customerName','Customer'],['amount','Amount'],['status','Status'],['date','Date']],returns:[['reference','Return number'],['customerName','Customer'],['amount','Amount'],['status','Status'],['date','Date']]}[type]||[];modal(`<h2>${i==null?'Add':'Edit'} ${type}</h2><form id="recordForm">${fields.map(([k,l])=>`<label>${l}${k==='notes'||k==='address'?`<textarea id="rf_${k}" rows="3">${esc(old[k]||'')}</textarea>`:`<input id="rf_${k}" ${['price','cost','gstRate','stock','reorder','amount'].includes(k)?'type="number" step="0.01"':''} value="${esc(old[k]??(k==='date'?new Date().toISOString().slice(0,10):''))}">`}</label>`).join('')}<div class="actions"><button type="button" class="soft-btn" id="cancelRecord">Cancel</button><button class="primary">Save</button></div></form>`);$('cancelRecord').onclick=closeModal;$('recordForm').onsubmit=async e=>{e.preventDefault();const o={};for(const [k] of fields){const v=$('rf_'+k).value;o[k]=['price','cost','gstRate','stock','reorder','amount'].includes(k)?Number(v||0):v}if(i==null)arr.push({...o,id:crypto.randomUUID()});else arr[i]={...arr[i],...o};queueSave();closeModal();showPage(pageForType(type));toast('Saved locally. Syncing…');saveType(type).then(()=>toast('Cloud saved')).catch(()=>toast('Saved locally; sync later'))}}
-function pageForType(type){return type==='products'?'products':type==='trade'?'trade':type==='quotes'||type==='orders'||type==='receipts'||type==='returns'?'business':'people'}
-function deleteRecord(type,i){if(!confirm('Delete this record?'))return;state[type].splice(i,1);queueSave();showPage(pageForType(type));toast('Deleted locally. Sync to cloud.')}
-function openMoney(kind){const isPay=kind==='payment';modal(`<h2>Add ${isPay?'Payment':'Expense'}</h2><form id="moneyForm"><label>Reference<input id="mmRef" required></label><label>${isPay?'Method':'Category'}<input id="mmMethod" value="${isPay?'UPI':'General'}"></label><label>Amount<input id="mmAmount" type="number" step="0.01" required></label><label>Status<input id="mmStatus" value="${isPay?'received':'paid'}"></label><div class="actions"><button type="button" class="soft-btn" id="cancelMoney">Cancel</button><button class="primary">Save</button></div></form>`);$('cancelMoney').onclick=closeModal;$('moneyForm').onsubmit=e=>{e.preventDefault();const o={id:crypto.randomUUID(),reference:$('mmRef').value,amount:Number($('mmAmount').value||0),status:$('mmStatus').value,[isPay?'method':'category']:$('mmMethod').value,date:new Date().toISOString().slice(0,10)};state[isPay?'payments':'expenses'].push(o);queueSave();closeModal();showPage('finance');toast('Saved locally. Syncing…');saveType(isPay?'payments':'expenses').then(()=>toast('Cloud saved')).catch(()=>toast('Saved locally; sync later'))}}
-function openTax(i=null){const old=i==null?{}:state.taxProfiles[i];modal(`<h2>${i==null?'Add':'Edit'} Tax Profile</h2><form id="taxForm"><label>ID<input id="txId" value="${esc(old.id||'gst'+Date.now())}" required></label><label>Name<input id="txName" value="${esc(old.name||'GST '+(old.rate||18)+'%')}" required></label><label>Rate %<input id="txRate" type="number" step="0.01" value="${old.rate||18}" required></label><div class="actions"><button type="button" class="soft-btn" id="cancelTax">Cancel</button><button class="primary">Save</button></div></form>`);$('cancelTax').onclick=closeModal;$('taxForm').onsubmit=e=>{e.preventDefault();const o={id:$('txId').value,name:$('txName').value,rate:Number($('txRate').value||0)};if(i==null)state.taxProfiles.push(o);else state.taxProfiles[i]=o;queueSave();closeModal();showPage('tax');toast('Tax profile saved.');saveType('taxProfiles').catch(()=>{})}}
-function openInvoice(){
-  const today=new Date().toISOString().slice(0,10);
-  const num=state.invoiceSettings.prefix+String(state.invoiceSettings.next).padStart(5,'0');
-  const customers=state.people.filter(x=>['customer','dealer','retailer','direct seller'].includes(String(x.type||'').toLowerCase()));
-  modal(`<h2>New GST Invoice</h2><form id="invoiceForm"><div class="two"><label>Invoice number<input id="ivNo" value="${esc(num)}" required></label><label>Date<input id="ivDate" type="date" value="${today}" required></label><label>Customer<select id="ivCustomer"><option value="">Cash Sale / Walk-in</option>${customers.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} — ${esc(c.gstin||'No GSTIN')}</option>`).join('')}</select></label><label>Place of supply<input id="ivPlace" value="" placeholder="State / Country"></label><label>Invoice type<select id="ivType"><option value="domestic">Domestic</option><option value="export">Export</option></select></label><label>Tax mode<select id="ivTaxMode"><option value="auto">Auto GST</option><option value="igst">IGST</option><option value="none">No GST</option></select></label></div><div class="card" style="margin:12px 0"><h3>Items</h3><div id="itemRows"></div><button type="button" class="soft-btn" id="addItem">＋ Add item</button></div><div id="invoiceTotals" class="card"></div><div class="actions"><button type="button" class="soft-btn" id="cancelInvoice">Cancel</button><button class="primary">Save Invoice</button></div></form>`);
-  let items=[];
-  const calc=()=>{
-    let taxable=0,gst=0;
-    for(const x of items){const base=(Number(x.qty)||0)*(Number(x.price)||0);taxable+=base;gst+=base*(Number(x.gstRate)||0)/100}
-    taxable=Math.round(taxable*100)/100;gst=Math.round(gst*100)/100;
-    let cgst=0,sgst=0,igst=0;const mode=$('ivTaxMode').value;
-    if(mode==='igst'||$('ivType').value==='export')igst=gst; else if(mode!=='none'){cgst=Math.round(gst/2*100)/100;sgst=Math.round((gst-cgst)*100)/100}
-    const grandTotal=Math.round((taxable+gst)*100)/100;
-    $('invoiceTotals').innerHTML=`<b>Taxable: ${money(taxable)}</b><br>CGST: ${money(cgst)} · SGST: ${money(sgst)} · IGST: ${money(igst)}<br><b>Grand Total: ${money(grandTotal)}</b>`;
-    return{taxable,gst,cgst,sgst,igst,grandTotal};
-  };
-  const renderItems=()=>{
-    $('itemRows').innerHTML=items.map((it,i)=>`<div class="two" style="margin-bottom:8px"><select data-item-product="${i}"><option value="">Select product</option>${state.products.map(p=>`<option value="${esc(p.id)}" ${p.id===it.productId?'selected':''}>${esc(p.name)} · ${money(p.price)}</option>`).join('')}</select><input data-item-qty="${i}" type="number" min="1" step="1" value="${it.qty||1}" placeholder="Qty"><input data-item-price="${i}" type="number" step="0.01" value="${it.price||0}" placeholder="Rate"><input data-item-gst="${i}" type="number" step="0.01" value="${it.gstRate||18}" placeholder="GST %"><button type="button" class="soft-btn" data-item-del="${i}">Remove</button></div>`).join('')||'<p class="muted">Add at least one product.</p>';
-    document.querySelectorAll('[data-item-product]').forEach(e=>e.onchange=()=>{const i=+e.dataset.itemProduct,p=state.products.find(x=>x.id===e.value);items[i]={...items[i],productId:e.value,price:Number(p?.price||0),gstRate:Number(p?.gstRate||18),name:p?.name||''};renderItems();calc()});
-    document.querySelectorAll('[data-item-qty]').forEach(e=>e.oninput=()=>{items[+e.dataset.itemQty].qty=Number(e.value||1);calc()});
-    document.querySelectorAll('[data-item-price]').forEach(e=>e.oninput=()=>{items[+e.dataset.itemPrice].price=Number(e.value||0);calc()});
-    document.querySelectorAll('[data-item-gst]').forEach(e=>e.oninput=()=>{items[+e.dataset.itemGst].gstRate=Number(e.value||0);calc()});
-    document.querySelectorAll('[data-item-del]').forEach(e=>e.onclick=()=>{items.splice(+e.dataset.itemDel,1);renderItems();calc()});
-  };
-  $('addItem').onclick=()=>{items.push({qty:1,price:0,gstRate:18});renderItems();calc()};
-  $('cancelInvoice').onclick=closeModal;$('ivTaxMode').onchange=calc;$('ivType').onchange=calc;
-  $('invoiceForm').onsubmit=e=>{
-    e.preventDefault();
-    if(!items.length){toast('Add at least one item');return}
-    const t=calc(),c=state.people.find(x=>x.id===$('ivCustomer').value);
-    const inv={id:crypto.randomUUID(),number:$('ivNo').value,date:$('ivDate').value,customerId:c?.id||'',customerName:c?.name||'Cash Sale / Walk-in',customerGstin:c?.gstin||'',place:$('ivPlace').value,type:$('ivType').value,taxMode:$('ivTaxMode').value,items:clone(items),...t,status:'issued'};
-    state.invoices.push(inv);state.invoiceSettings.next=Number(state.invoiceSettings.next)+1;
-    for(const it of items){const p=state.products.find(x=>x.id===it.productId);if(p)p.stock=Math.max(0,(Number(p.stock)||0)-(Number(it.qty)||0))}
-    queueSave();closeModal();showPage('business');toast('GST invoice saved. Syncing…');Promise.all([saveType('invoices'),saveType('products'),saveType('invoiceSettings')]).then(()=>toast('Invoice saved to cloud')).catch(()=>toast('Invoice saved locally; sync later'));setTimeout(()=>printInvoice(inv,'80mm'),250);
-  };
-  items.push({qty:1,price:0,gstRate:18});renderItems();calc();
+$("productForm").onsubmit=e=>{
+ e.preventDefault();state.products.push({name:$("pName").value.trim(),sku:$("pSku").value.trim(),rate:+$("pRate").value||0,gst:+$("pGst").value||0,stock:+$("pStock").value||0});save();e.target.reset();$("pGst").value=18;renderProducts();refreshCustomerProductOptions()
+};
+
+function renderCustomers(){
+ $("customerList").innerHTML=state.customers.length?state.customers.map(c=>`<div class="list-row"><span><b>${esc(c.name)}</b><br><small>${esc(c.mobile||"")} · ${esc(c.email||"")} · ${esc(c.tax||"")}</small></span></div>`).join(""):"<p class='hint'>No customers yet.</p>";
 }
-function printInvoice(inv,size='80mm'){if(!inv)return;const w=window.open('','_blank');if(!w)return toast('Allow pop-ups to print invoices');w.document.write(invoiceHtml(inv,size));w.document.close()}
-function saveSettings(){state.business.name=$('sName').value;state.business.owner=$('sOwner').value;state.business.gstin=$('sGstin').value;state.business.country=$('sCountry').value;state.business.phone=$('sPhone').value;state.business.email=$('sEmail').value;state.business.currency=$('sCurrency').value;state.business.address=$('sAddress').value;state.business.logo=$('sLogo').value;state.invoiceSettings.prefix=$('sPrefix').value;state.invoiceSettings.next=Number($('sNext').value||1);queueSave();api('/api/profile',{method:'PUT',body:JSON.stringify({name:state.business.owner,mobile:state.business.phone,businessName:state.business.name,country:state.business.country})}).then(()=>saveType('settings')).then(()=>toast('Settings saved to cloud')).catch(e=>toast('Saved locally; cloud sync needed: '+e.message))}
-async function saveRole(userId){const role=document.querySelector(`[data-role-user="${CSS.escape(userId)}"]`).value;try{await api('/api/users/role',{method:'PUT',body:JSON.stringify({userId,role})});toast('Role updated')}catch(e){toast(e.message)}}
-function importMaster(e){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);for(const k of ['taxProfiles','paymentMethods','roles','terms','customData'])if(Array.isArray(d[k]))state[k]=d[k];queueSave();showPage('master');toast('Master data imported')}catch{toast('Invalid JSON file')}};r.readAsText(f)}
-function reportCSV(){const h='Invoice,Date,Customer,Taxable,GST,Total\n';return h+state.invoices.map(x=>[x.number,x.date,x.customerName,x.taxable,x.gst,x.grandTotal].map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n')}
-function download(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-(function init(){if($('regCountry'))$('regCountry').innerHTML=countryOptions('India');if(token())openApp()})();
+$("customerForm").onsubmit=e=>{
+ e.preventDefault();state.customers.push({name:$("cName").value.trim(),mobile:$("cMobile").value.trim(),email:$("cEmail").value.trim(),tax:$("cTax").value.trim()});save();e.target.reset();renderCustomers();refreshCustomerProductOptions()
+};
+function refreshCustomerProductOptions(){
+ $("customer").innerHTML='<option>Cash Sale / Walk-in</option>'+state.customers.map(c=>`<option>${esc(c.name)}</option>`).join("");
+ const old=[...document.querySelectorAll(".product")];old.forEach(s=>{const v=s.value;s.innerHTML=productOptions();s.value=v});
+}
+function renderInvoices(){
+ $("invoiceList").innerHTML=state.invoices.length?`<table class="table"><thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Total</th></tr></thead><tbody>${state.invoices.slice().reverse().map(i=>`<tr><td>${esc(i.no)}</td><td>${esc(i.date)}</td><td>${esc(i.customer)}</td><td>${money(i.total)}</td></tr>`).join("")}</tbody></table>`:"<p>No saved invoices.</p>";
+}
+function updateDashboard(){
+ const sales=state.invoices.reduce((a,i)=>a+i.total,0);
+ $("dashSales").textContent=money(sales);$("dashPayments").textContent=money(0);$("dashCustomers").textContent=state.customers.length;$("dashProducts").textContent=state.products.length;$("dashStock").textContent=state.products.reduce((a,p)=>a+p.stock,0);$("dashInvoices").textContent=state.invoices.length;$("dashReceivables").textContent=money(sales);$("dashSync").textContent=0;
+}
+function preview(){
+ calc();
+ const rows=[...document.querySelectorAll("#items .item")].map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.querySelector(".product").selectedOptions[0]?.text||"Item")}</td><td>${r.querySelector(".qty").value}</td><td>${money(+r.querySelector(".rate").value)}</td><td>${money((+r.querySelector(".qty").value||0)*(+r.querySelector(".rate").value||0))}</td></tr>`).join("");
+ $("invoicePreview").innerHTML=`<div class="invoice-paper"><h2>${esc(state.settings.businessName)}</h2><p>${esc(state.settings.businessContact)}</p><hr><h3>TAX INVOICE</h3><p><b>Invoice:</b> ${esc($("invoiceNo").value)} &nbsp; <b>Date:</b> ${esc($("invoiceDate").value)}</p><p><b>Customer:</b> ${esc($("customer").value)}</p><p><b>Place:</b> ${esc($("placeSupply").value||"—")}</p><table><tr><th>#</th><th>Product</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table><h3 style="text-align:right">Total: ${esc($("grand").textContent)}</h3><p>CGST ${esc($("cgst").textContent)} · SGST ${esc($("sgst").textContent)} · IGST ${esc($("igst").textContent)}</p><p style="margin-top:35px">QR / Barcode area</p></div>`;
+ $("previewModal").classList.add("show")
+}
+$("previewBtn").onclick=preview;$("previewClose").onclick=()=> $("previewModal").classList.remove("show");$("printBtn").onclick=()=>{preview();setTimeout(()=>window.print(),300)};
+
+async function loadIP(){
+ $("onlineState").textContent=navigator.onLine?"Online":"Offline";$("platform").textContent=navigator.platform||"Unknown";$("browser").textContent=navigator.userAgent.slice(0,80);
+ if(!$("publicIp").dataset.loaded)$("publicIp").textContent="Not loaded";
+}
+async function refreshIP(){
+ $("publicIp").textContent="Loading…";
+ try{const r=await fetch("https://api.ipify.org?format=json",{cache:"no-store"});const j=await r.json();$("publicIp").textContent=j.ip;$("publicIp").dataset.loaded="1"}
+ catch(e){$("publicIp").textContent="Unavailable (offline or blocked)"}
+}
+$("ipRefresh").onclick=refreshIP;window.addEventListener("online",loadIP);window.addEventListener("offline",loadIP);
+
+$("saveSettings").onclick=()=>{state.settings.businessName=$("businessName").value.trim()||"SENQUARA ONE";state.settings.businessContact=$("businessContact").value;save();alert("Settings saved.")};
+$("clearData").onclick=()=>{if(confirm("Delete all local products, customers and invoices?")){localStorage.removeItem(KEY);location.reload()}};
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function init(){refreshCustomerProductOptions();renderProducts();renderCustomers();renderInvoices();updateDashboard();loadIP();calc()}
+init();
