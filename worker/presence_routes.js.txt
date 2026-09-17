@@ -1,0 +1,125 @@
+/* =========================================================
+   SENQUARA ONE — LIVE USER/PRESENCE ADDITIONS
+   Merge these helpers/routes into worker/index.js.
+   ========================================================= */
+
+async function ensurePresenceTables(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_presence(
+    user_id TEXT PRIMARY KEY,
+    ip TEXT,
+    country TEXT,
+    region TEXT,
+    city TEXT,
+    latitude REAL,
+    longitude REAL,
+    timezone TEXT,
+    colo TEXT,
+    presence_status TEXT NOT NULL DEFAULT 'online',
+    last_error TEXT,
+    last_seen TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_last_seen ON user_presence(last_seen)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_status ON user_presence(presence_status)`).run();
+  try{await env.DB.prepare(`ALTER TABLE users ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0`).run()}catch{}
+  try{await env.DB.prepare(`ALTER TABLE users ADD COLUMN blocked_at TEXT`).run()}catch{}
+}
+
+function requestGeo(request){
+  const cf=request.cf||{};
+  return {
+    ip:request.headers.get('CF-Connecting-IP')||'',
+    country:cf.country||request.headers.get('CF-IPCountry')||'',
+    region:cf.region||'',
+    city:cf.city||'',
+    latitude:cf.latitude==null?null:Number(cf.latitude),
+    longitude:cf.longitude==null?null:Number(cf.longitude),
+    timezone:cf.timezone||'',
+    colo:cf.colo||''
+  };
+}
+
+/* In /api/auth/login, after finding the user, add:
+   if(Number(user.blocked||0)===1)return json({error:'This account is blocked. Contact Owner/Admin.'},403);
+*/
+
+/* In /api/auth/register, after inserting the new user, optionally audit:
+   await audit(env,{id:uid},'register','users',uid,{email});
+*/
+
+async function presenceHeartbeat(request,env,user){
+  await ensurePresenceTables(env);
+  const body=await request.json().catch(()=>({}));
+  const g=requestGeo(request), status=['online','problem'].includes(body.status)?body.status:'online';
+  const err=String(body.error||'').slice(0,250);
+  const now=new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO user_presence(user_id,ip,country,region,city,latitude,longitude,timezone,colo,presence_status,last_error,last_seen,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      ip=excluded.ip,country=excluded.country,region=excluded.region,city=excluded.city,
+      latitude=excluded.latitude,longitude=excluded.longitude,timezone=excluded.timezone,colo=excluded.colo,
+      presence_status=excluded.presence_status,last_error=excluded.last_error,last_seen=excluded.last_seen,updated_at=excluded.updated_at`)
+    .bind(user.id,g.ip,g.country,g.region,g.city,g.latitude,g.longitude,g.timezone,g.colo,status,err,now,now).run();
+  return json({ok:true,last_seen:now});
+}
+
+async function presenceSummary(env){
+  await ensurePresenceTables(env);
+  const six=new Date(Date.now()-183*86400000).toISOString();
+  const active=new Date(Date.now()-90000).toISOString();
+  const online=await env.DB.prepare(`SELECT COUNT(*) total FROM user_presence WHERE last_seen>=? AND presence_status='online'`).bind(active).first();
+  const total=await env.DB.prepare(`SELECT COUNT(*) total FROM users`).first();
+  const newSince=new Date(Date.now()-15*60*1000).toISOString();
+  const newUsers=await env.DB.prepare(`SELECT COUNT(*) total FROM users WHERE created_at>=?`).bind(newSince).first();
+  return {online_count:Number(online?.total||0),total_users:Number(total?.total||0),new_users:Number(newUsers?.total||0)};
+}
+
+async function presenceList(env){
+  await ensurePresenceTables(env);
+  const rows=await env.DB.prepare(`SELECT u.id,u.email,u.name,u.mobile,u.country AS user_country,u.role,u.created_at,u.blocked,u.blocked_at,
+    p.ip,p.country,p.region,p.city,p.latitude,p.longitude,p.timezone,p.colo,p.presence_status,p.last_error,p.last_seen,p.updated_at
+    FROM users u LEFT JOIN user_presence p ON p.user_id=u.id ORDER BY u.created_at DESC`).all();
+  const six=Date.now()-183*86400000, active=Date.now()-90000;
+  const users=(rows.results||[]).map(r=>({...r,country:r.country||r.user_country||'',status:
+    Number(r.blocked)?'offline':
+    (r.presence_status==='problem'||r.last_error)?'problem':
+    (r.last_seen&&new Date(r.last_seen).getTime()>=active)?'online':
+    ((r.last_seen&&new Date(r.last_seen).getTime()<six)||(!r.last_seen&&new Date(r.created_at).getTime()<six))?'pink':'offline'
+  }));
+  const online_count=users.filter(x=>x.status==='online').length;
+  const new_users=users.filter(x=>Date.now()-new Date(x.created_at).getTime()<15*60*1000).length;
+  return {users,online_count,new_users};
+}
+
+async function blockUser(env,actor,body){
+  if(actor.role!=='owner')return json({error:'Owner/Admin only'},403);
+  if(!body.userId)return json({error:'userId is required'},400);
+  if(body.userId===actor.id)return json({error:'You cannot block your own account'},400);
+  const blocked=!!body.blocked, at=blocked?new Date().toISOString():null;
+  await env.DB.prepare(`UPDATE users SET blocked=?,blocked_at=? WHERE id=?`).bind(blocked?1:0,at,body.userId).run();
+  await audit(env,actor,blocked?'block_user':'unblock_user','users',body.userId,{blocked});
+  return json({ok:true,blocked});
+}
+
+/* Add these routes AFTER const user=await getUser(...) and before the existing /api/data routes:
+if(url.pathname==='/api/presence/heartbeat'&&request.method==='POST')return presenceHeartbeat(request,env,user);
+if(url.pathname==='/api/presence'&&request.method==='GET'){
+  if(user.role!=='owner'&&user.role!=='manager')return json({error:'Manager/Admin access required'},403);
+  return json(await presenceList(env));
+}
+if(url.pathname==='/api/presence/summary'&&request.method==='GET'){
+  if(user.role!=='owner'&&user.role!=='manager')return json({error:'Manager/Admin access required'},403);
+  return json(await presenceSummary(env));
+}
+if(url.pathname==='/api/users/block'&&request.method==='PUT'){
+  const body=await request.json();
+  return blockUser(env,user,body);
+}
+*/
+
+/* IMPORTANT: For blocked-login protection, change the existing login SELECT to:
+   SELECT * FROM users WHERE email=?
+   and immediately after `if(!user)...` add:
+   if(Number(user.blocked||0)===1)return json({error:'This account is blocked. Contact Owner/Admin.'},403);
+*/
