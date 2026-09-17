@@ -1,0 +1,7 @@
+/* Optional standalone CSS file if you prefer not to use the injected styles in user-monitor.js. */
+.sto-live-btn{position:relative}
+.sto-light{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.12)}
+.sto-green{background:#19b86b}.sto-white{background:#fff}.sto-red{background:#e5484d}.sto-pink{background:#e889b8}
+.sto-monitor-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:16px}
+.sto-map{height:430px;border-radius:16px;overflow:hidden}
+@media(max-width:900px){.sto-monitor-grid{grid-template-columns:1fr}.sto-map{height:330px}}
