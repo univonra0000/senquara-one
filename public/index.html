@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded',()=>{loadOnce();s6NewPO();s6Receive
  $('sqOpenMenu').onclick=openDrawer;$('sqCloseMenu').onclick=closeDrawer;$('sqScrim').onclick=closeDrawer;
 
  function activateOld(id){
-   const btn=document.querySelector('.nav button[onclick*="show(\\''+id+'\\'"]');
+   const btn=[...document.querySelectorAll('.nav button')].find(b=>String(b.getAttribute('onclick')||'').includes("show('"+id+"'"));
    if(btn) btn.click(); else if(typeof show==='function') {
      const fake={classList:{add(){},remove(){}},textContent:id};
      show(id,fake);
@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded',()=>{loadOnce();s6NewPO();s6Receive
    w.document.close();
  }
  $('sqPreview').onclick=previewBill;$('sqPrintBill').onclick=()=>{previewBill();};
- function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])}
+ function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
  function loadIP(){
    $('sqIPOnline').value=navigator.onLine?'Online':'Offline';
    $('sqIPPlatform').value=navigator.platform||'Unknown';
@@ -686,5 +686,6 @@ document.addEventListener('DOMContentLoaded',()=>{loadOnce();s6NewPO();s6Receive
 })();
 </script>
 
+<script src="js/senquara-auth.js?v=3"></script>
 </body>
 </html>
