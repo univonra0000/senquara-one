@@ -55,8 +55,15 @@
       .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}.overlay.show{display:block}
     }
     @media print{
-      .sidebar,.topbar,.noPrint{display:none!important}.main{margin:0;width:100%}.content{padding:0}.page{display:none!important}.page.active{display:block!important}.invoice{box-shadow:none}
+      .sidebar,.topbar,.noPrint,.sq-actions{display:none!important}.main{margin:0;width:100%}.content{padding:0}.page{display:none!important}.page.active{display:block!important}.invoice{box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;padding:0!important;max-width:none!important}
+      body{background:#fff!important;color:#111!important}.tally-invoice{display:block!important}
     }
+    .tally-invoice{position:relative;background:#fff;color:#111;border:1px solid #222;border-radius:0;padding:18px;max-width:900px;margin:20px auto;font-family:Arial,Helvetica,sans-serif;font-size:12px}
+    .tally-original{text-align:right;font-size:10px;margin-bottom:4px}
+    .tally-header{display:flex;justify-content:space-between;border:1px solid #222;min-height:100px}
+    .tally-company{flex:1;padding:12px;border-right:1px solid #222}.tally-company h1{font-size:21px;margin:0 0 8px}.tally-company div{line-height:1.5}.tally-title{width:270px;padding:12px}.tax-invoice-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:12px}
+    .tally-parties{display:grid;grid-template-columns:1fr 1fr;border:1px solid #222;border-top:0}.tally-parties>div{padding:9px;min-height:75px}.tally-parties>div+div{border-left:1px solid #222}.tally-items{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:10px}.tally-items th,.tally-items td{border:1px solid #222;padding:6px;vertical-align:top}.tally-items th{font-weight:700;background:#f4f4f4}.tally-items .num{text-align:right}.tally-items .right{text-align:right}.grand-row td{font-size:13px;background:#f4f4f4}.tally-bottom{display:grid;grid-template-columns:1fr 260px;border:1px solid #222;border-top:0;min-height:120px}.tally-bottom>div{padding:10px;line-height:1.5}.tally-bottom .signature{border-left:1px solid #222;text-align:right;display:flex;flex-direction:column;justify-content:space-between}.tally-invoice #previewCustomerAddress,.tally-invoice #previewCustomerGstin{line-height:1.5}
+    @media(max-width:700px){.tally-invoice{padding:8px;font-size:10px}.tally-header{display:block}.tally-company{border-right:0;border-bottom:1px solid #222}.tally-title{width:auto}.tally-parties,.tally-bottom{grid-template-columns:1fr}.tally-parties>div+div,.tally-bottom .signature{border-left:0;border-top:1px solid #222}.tally-items th,.tally-items td{padding:4px;font-size:9px}}
   </style>
 </head>
 <body>
@@ -142,11 +149,34 @@
           <div style="text-align:right;margin-top:16px"><strong>Grand Total: <span id="invoiceTotal">₹0.00</span></strong></div>
           <div class="actions" style="margin-top:18px"><button class="btn primary" id="saveInvoice">Save Invoice</button><button class="btn" onclick="window.print()">Print / PDF</button></div>
         </div>
-        <div class="invoice" id="invoicePreview">
-          <div style="display:flex;justify-content:space-between;gap:20px"><div><h1 style="margin:0">SENQUARA ONES</h1><p>One Platform. Everything Connected.</p></div><div><strong id="previewNumber">DRAFT</strong><br><span id="previewDate"></span></div></div>
-          <hr><p><strong>Bill To:</strong> <span id="previewCustomer">Select customer</span></p>
-          <table class="table" style="color:#111"><thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Tax</th><th>Total</th></tr></thead><tbody id="previewLines"></tbody></table>
-          <h2 style="text-align:right" id="previewTotal">₹0.00</h2>
+        <div class="invoice tally-invoice" id="invoicePreview">
+          <div class="tally-original">Original for Recipient</div>
+          <div class="tally-header">
+            <div class="tally-company">
+              <h1 id="previewCompanyName">SENQUARA ONES</h1>
+              <div id="previewCompanyAddress"></div>
+              <div id="previewCompanyGstin"></div>
+              <div id="previewCompanyContact"></div>
+            </div>
+            <div class="tally-title">
+              <div class="tax-invoice-title">TAX INVOICE</div>
+              <div><b>Invoice No.:</b> <span id="previewNumber">DRAFT</span></div>
+              <div><b>Date:</b> <span id="previewDate"></span></div>
+            </div>
+          </div>
+          <div class="tally-parties">
+            <div><b>Buyer (Bill to)</b><br><strong id="previewCustomer">Select customer</strong><div id="previewCustomerAddress"></div><div id="previewCustomerGstin"></div></div>
+            <div><b>Place of Supply</b><br><span id="previewPlace">—</span><br><b>Terms of Payment</b><br><span id="previewPaymentTerms">—</span></div>
+          </div>
+          <table class="tally-items">
+            <thead><tr><th class="num">Sl</th><th>Description of Goods / Services</th><th>HSN/SAC</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">GST %</th><th class="num">Amount</th></tr></thead>
+            <tbody id="previewLines"></tbody>
+            <tfoot><tr><td colspan="6" class="right"><b>Taxable Value</b></td><td class="right" id="previewTaxable">₹0.00</td></tr><tr><td colspan="6" class="right"><b>CGST</b></td><td class="right" id="previewCgst">₹0.00</td></tr><tr><td colspan="6" class="right"><b>SGST</b></td><td class="right" id="previewSgst">₹0.00</td></tr><tr class="grand-row"><td colspan="6" class="right"><b>Grand Total</b></td><td class="right" id="previewTotal">₹0.00</td></tr></tfoot>
+          </table>
+          <div class="tally-bottom">
+            <div><b>Amount in Words</b><br><span id="previewWords">Rupees Zero Only</span><br><br><b>Declaration</b><br>We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct.</div>
+            <div class="signature"><b>For <span id="previewSignCompany">SENQUARA ONES</span></b><br><br><br>Authorised Signatory</div>
+          </div>
         </div>
       </section>
 
@@ -160,7 +190,7 @@
       <section class="page" id="tax"><h2>Tax &amp; Invoice</h2><p class="subtitle">Tax configuration for invoices.</p><div class="card"><div class="formgrid"><div><label>Default tax rate %</label><input id="defaultTax" type="number" value="18"></div><div><label>Currency</label><select id="currency"><option>INR (₹)</option><option>USD ($)</option></select></div></div></div></section>
       <section class="page" id="inventory"><h2>Inventory</h2><p class="subtitle">Stock overview.</p><div class="card"><p class="muted">Inventory workspace ready.</p></div></section>
       <section class="page" id="ip-base"><h2>IP Base Model</h2><p class="subtitle">Platform foundation and connected modules.</p><div class="card"><p class="muted">IP Base Model workspace ready.</p></div></section>
-      <section class="page" id="settings"><h2>Settings</h2><p class="subtitle">Business and application settings.</p><div class="card"><div class="formgrid"><div><label>Business name</label><input id="businessName" value="SENQUARA ONES"></div><div><label>Country</label><input value="India"></div></div></div></section>
+      <section class="page" id="settings"><h2>Settings</h2><p class="subtitle">Business and application settings.</p><div class="card"><div class="formgrid"><div><label>Business name</label><input id="businessName" value="SENQUARA ONES"></div><div><label>Country</label><input id="country" value="India"></div></div></div></section>
     </div>
   </main>
 </div>
@@ -209,7 +239,7 @@
     const c=data.customers.find(x=>x.id==$('invoiceCustomer').value);
     if(!c){toast('Select a customer');return}
     const total=lines.reduce((s,l)=>s+l.qty*l.rate*(1+l.tax/100),0);
-    data.invoices.push({id:Date.now(),number:'INV-'+String(data.invoices.length+1).padStart(4,'0'),date:$('invoiceDate').value,customer:c.name,lines:[...lines],total});
+    data.invoices.push({id:Date.now(),number:'INV-'+String(data.invoices.length+1).padStart(4,'0'),date:$('invoiceDate').value,customer:c.name,customerAddress:c.address||'',customerGstin:c.gstin||'',placeOfSupply:c.state||'',lines:[...lines],taxable:lines.reduce((s,l)=>s+l.qty*l.rate,0),cgst:lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100)/2,0),sgst:lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100)/2,0),total});
     save();lines=[];renderInvoice();toast('Invoice saved');
   };
 
@@ -227,15 +257,38 @@
 
   function renderInvoice(){
     if(!$('invoiceDate').value)$('invoiceDate').value=new Date().toISOString().slice(0,10);
+    const company=$('businessName')?.value?.trim()||'SENQUARA ONES';
+    const c=data.customers.find(x=>x.id===$('invoiceCustomer').value)||{};
+    const taxable=lines.reduce((s,l)=>s+l.qty*l.rate,0);
+    const tax=lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100),0);
+    const cgst=tax/2, sgst=tax/2, grand=taxable+tax;
     $('invoiceLines').innerHTML=lines.map((l,i)=>{
       const subtotal=l.qty*l.rate, total=subtotal*(1+l.tax/100);
       return `<tr><td>${esc(l.name)}</td><td><input style="width:85px" type="number" min="1" value="${l.qty}" onchange="setQty(${i},this.value)"></td><td>${money(l.rate)}</td><td>${l.tax}%</td><td>${money(total)}</td><td><button class="btn danger" onclick="removeLine(${i})">×</button></td></tr>`
     }).join('')||'<tr><td colspan="6" class="muted">No products added.</td></tr>';
-    const total=lines.reduce((s,l)=>s+l.qty*l.rate*(1+l.tax/100),0);
-    $('invoiceTotal').textContent=money(total);$('previewTotal').textContent=money(total);
-    const c=data.customers.find(x=>x.id===$('invoiceCustomer').value);$('previewCustomer').textContent=c?c.name:'Select customer';
+    $('invoiceTotal').textContent=money(grand);
+    $('previewTotal').textContent=money(grand);
+    $('previewTaxable').textContent=money(taxable);
+    $('previewCgst').textContent=money(cgst);
+    $('previewSgst').textContent=money(sgst);
+    $('previewCustomer').textContent=c.name||'Cash Sale / Walk-in';
+    $('previewCustomerAddress').textContent=c.address||'';
+    $('previewCustomerGstin').textContent=c.gstin?'GSTIN: '+c.gstin:'';
     $('previewDate').textContent=$('invoiceDate').value||'';
-    $('previewLines').innerHTML=lines.map(l=>`<tr><td>${esc(l.name)}</td><td>${l.qty}</td><td>${money(l.rate)}</td><td>${l.tax}%</td><td>${money(l.qty*l.rate*(1+l.tax/100))}</td></tr>`).join('');
+    $('previewNumber').textContent='DRAFT';
+    $('previewCompanyName').textContent=company;
+    $('previewSignCompany').textContent=company;
+    $('previewCompanyAddress').textContent=$('country')?.value ? $('country').value : 'India';
+    $('previewCompanyGstin').textContent='';
+    $('previewCompanyContact').textContent='';
+    $('previewPlace').textContent=c.state||'—';
+    $('previewPaymentTerms').textContent='—';
+    $('previewWords').textContent='Rupees '+(grand?grand.toFixed(2):'Zero')+' Only';
+    $('previewLines').innerHTML=lines.map((l,i)=>{
+      const p=data.products.find(x=>x.id===l.productId)||{};
+      const base=l.qty*l.rate;
+      return `<tr><td class="num">${i+1}</td><td>${esc(l.name)}</td><td>${esc(p.hsn||p.hsnSac||'')}</td><td class="num">${l.qty}</td><td class="num">${money(l.rate)}</td><td class="num">${Number(l.tax||0)}%</td><td class="num">${money(base)}</td></tr>`;
+    }).join('')||'<tr><td class="num">1</td><td>Goods / Services</td><td></td><td class="num">1</td><td class="num">₹0.00</td><td class="num">0%</td><td class="num">₹0.00</td></tr>';
   }
   window.setQty=(i,v)=>{lines[i].qty=Math.max(1,+v||1);renderInvoice()};
   window.removeLine=i=>{lines.splice(i,1);renderInvoice()};
