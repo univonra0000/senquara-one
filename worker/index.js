@@ -15,8 +15,13 @@ export default {
     }
 
     try {
-      // Health check
-      if (url.pathname === "/api/health" && request.method === "GET") {
+      // -------------------------------
+      // HEALTH
+      // -------------------------------
+      if (
+        url.pathname === "/api/health" &&
+        request.method === "GET"
+      ) {
         return json({
           ok: true,
           app: "SENQUARA ONE",
@@ -24,9 +29,15 @@ export default {
         });
       }
 
-      // Server-observed IP
-      if (url.pathname === "/api/ip" && request.method === "GET") {
+      // -------------------------------
+      // SERVER IP
+      // -------------------------------
+      if (
+        url.pathname === "/api/ip" &&
+        request.method === "GET"
+      ) {
         return json({
+          ok: true,
           ip: request.headers.get("CF-Connecting-IP") || "",
           country: request.cf?.country || "",
           colo: request.cf?.colo || "",
@@ -34,43 +45,70 @@ export default {
         });
       }
 
-      // Registration
-      if (url.pathname === "/api/auth/register" && request.method === "POST") {
+      // -------------------------------
+      // REGISTER
+      // -------------------------------
+      if (
+        url.pathname === "/api/auth/register" &&
+        request.method === "POST"
+      ) {
         return await register(request, env);
       }
 
-      // Login
-      if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      // -------------------------------
+      // LOGIN
+      // -------------------------------
+      if (
+        url.pathname === "/api/auth/login" &&
+        request.method === "POST"
+      ) {
         return await login(request, env);
       }
 
-      // Logout
-      if (url.pathname === "/api/auth/logout" && request.method === "POST") {
-        return json({ ok: true, message: "Logged out" });
+      // -------------------------------
+      // LOGOUT
+      // -------------------------------
+      if (
+        url.pathname === "/api/auth/logout" &&
+        request.method === "POST"
+      ) {
+        return json({
+          ok: true,
+          message: "Logged out successfully."
+        });
       }
 
       return json({
         ok: false,
-        error: "Route not found"
+        error: "Route not found."
       }, 404);
 
-    } catch (err) {
+    } catch (error) {
       return json({
         ok: false,
-        error: err?.message || "Server error"
+        error: error?.message || "Server error."
       }, 500);
     }
   }
 };
 
 
-// ===============================
-// REGISTRATION
-// ===============================
+// ==================================================
+// REGISTER
+// ==================================================
 
 async function register(request, env) {
 
-  const body = await request.json();
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json({
+      ok: false,
+      error: "Invalid JSON request."
+    }, 400);
+  }
 
   const name = String(body.name || "").trim();
   const businessName = String(body.businessName || "").trim();
@@ -78,23 +116,50 @@ async function register(request, env) {
   const mobile = String(body.mobile || "").trim();
   const country = String(body.country || "").trim();
   const password = String(body.password || "");
+
   const termsAccepted = body.termsAccepted === true;
-  const termsVersion = String(body.termsVersion || "1.0");
+  const termsVersion = String(
+    body.termsVersion || "1.0"
+  ).trim();
 
-  if (!name || !email || !mobile || !password) {
+  // Required fields
+  if (!name) {
     return json({
       ok: false,
-      error: "Name, email, mobile and password are required."
+      error: "Full name is required."
     }, 400);
   }
 
-  if (!termsAccepted) {
+  if (!email) {
     return json({
       ok: false,
-      error: "Please accept the registration Terms and Conditions."
+      error: "Email is required."
     }, 400);
   }
 
+  if (!mobile) {
+    return json({
+      ok: false,
+      error: "Mobile number is required."
+    }, 400);
+  }
+
+  if (!password) {
+    return json({
+      ok: false,
+      error: "Password is required."
+    }, 400);
+  }
+
+  // Basic email validation
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return json({
+      ok: false,
+      error: "Please enter a valid email address."
+    }, 400);
+  }
+
+  // Password
   if (password.length < 8) {
     return json({
       ok: false,
@@ -102,16 +167,36 @@ async function register(request, env) {
     }, 400);
   }
 
-  // Check whether this is the first account
+  // Terms
+  if (!termsAccepted) {
+    return json({
+      ok: false,
+      error: "Please accept the Terms and Conditions."
+    }, 400);
+  }
+
+  // ----------------------------------------------
+  // Check existing users
+  // ----------------------------------------------
+
   const countResult = await env.DB
-    .prepare("SELECT COUNT(*) AS total FROM users")
+    .prepare(
+      "SELECT COUNT(*) AS total FROM users"
+    )
     .first();
 
-  const totalUsers = Number(countResult?.total || 0);
+  const totalUsers = Number(
+    countResult?.total || 0
+  );
 
-  // Check duplicate email
+  // ----------------------------------------------
+  // Duplicate email
+  // ----------------------------------------------
+
   const existing = await env.DB
-    .prepare("SELECT id FROM users WHERE email = ? LIMIT 1")
+    .prepare(
+      "SELECT id FROM users WHERE email = ? LIMIT 1"
+    )
     .bind(email)
     .first();
 
@@ -122,61 +207,113 @@ async function register(request, env) {
     }, 409);
   }
 
-  const passwordHash = await hashPassword(password);
+  // ----------------------------------------------
+  // Password
+  // ----------------------------------------------
+
+  const passwordData =
+    await hashPassword(password);
+
+  // ----------------------------------------------
+  // Account information
+  // ----------------------------------------------
 
   const id = crypto.randomUUID();
 
-  // First registered account becomes Owner/Master.
-  // All later accounts remain pending.
+  /*
+    First account:
+      role   = owner
+      status = active
+
+    Later accounts:
+      role   = viewer
+      status = pending
+  */
+
   const firstUser = totalUsers === 0;
 
-  const role = firstUser ? "owner" : "viewer";
-  const status = firstUser ? "active" : "pending";
+  const role = firstUser
+    ? "owner"
+    : "viewer";
 
-  const now = new Date().toISOString();
+  const status = firstUser
+    ? "active"
+    : "pending";
 
-  await env.DB.prepare(`
-    INSERT INTO users (
-      id,
-      name,
-      business_name,
-      email,
-      mobile,
-      country,
-      password_hash,
-      role,
-      status,
-      email_verified,
-      terms_version,
-      terms_accepted_at,
-      created_at,
-      updated_at
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
+  /*
+    STEP 1:
+    First account is allowed to become
+    the initial Master/Owner.
+
+    Later accounts wait for approval.
+
+    Email verification will be added
+    in the next tested step.
+  */
+
+  const emailVerified = firstUser ? 1 : 0;
+
+  const now =
+    new Date().toISOString();
+
+  // ----------------------------------------------
+  // Insert user
+  // ----------------------------------------------
+
+  await env.DB
+    .prepare(`
+      INSERT INTO users (
+        id,
+        email,
+        name,
+        mobile,
+        business_name,
+        country,
+        password_hash,
+        password_salt,
+        role,
+        created_at,
+        status,
+        email_verified,
+        terms_version,
+        terms_accepted_at,
+        updated_at
+      )
+      VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?
+      )
+    `)
     .bind(
       id,
-      name,
-      businessName,
       email,
+      name,
       mobile,
+      businessName,
       country,
-      passwordHash,
+      passwordData.hash,
+      passwordData.salt,
       role,
-      status,
-      firstUser ? 1 : 0,
-      termsVersion,
       now,
+      status,
+      emailVerified,
+      termsVersion,
       now,
       now
     )
     .run();
 
-  // First account
+  // ----------------------------------------------
+  // FIRST USER
+  // ----------------------------------------------
+
   if (firstUser) {
+
     return json({
       ok: true,
+
       firstAccount: true,
+
       user: {
         id,
         name,
@@ -185,17 +322,26 @@ async function register(request, env) {
         mobile,
         country,
         role: "owner",
-        status: "active"
+        status: "active",
+        emailVerified: true
       },
-      message: "Initial Master/Admin account created."
+
+      message:
+        "Initial Master/Admin account created successfully."
     });
   }
 
-  // Later accounts
+  // ----------------------------------------------
+  // LATER USER
+  // ----------------------------------------------
+
   return json({
     ok: true,
+
     firstAccount: false,
+
     pending: true,
+
     user: {
       id,
       name,
@@ -203,25 +349,41 @@ async function register(request, env) {
       email,
       mobile,
       country,
-      role,
-      status
+      role: "viewer",
+      status: "pending",
+      emailVerified: false
     },
+
     message:
       "Registration received. Your account is pending Master/Admin approval."
   });
 }
 
 
-// ===============================
+// ==================================================
 // LOGIN
-// ===============================
+// ==================================================
 
 async function login(request, env) {
 
-  const body = await request.json();
+  let body;
 
-  const email = String(body.email || "").trim().toLowerCase();
-  const password = String(body.password || "");
+  try {
+    body = await request.json();
+  } catch {
+    return json({
+      ok: false,
+      error: "Invalid JSON request."
+    }, 400);
+  }
+
+  const email = String(
+    body.email || ""
+  ).trim().toLowerCase();
+
+  const password = String(
+    body.password || ""
+  );
 
   if (!email || !password) {
     return json({
@@ -230,16 +392,21 @@ async function login(request, env) {
     }, 400);
   }
 
+  // ----------------------------------------------
+  // Find user
+  // ----------------------------------------------
+
   const user = await env.DB
     .prepare(`
       SELECT
         id,
-        name,
-        business_name,
         email,
+        name,
         mobile,
+        business_name,
         country,
         password_hash,
+        password_salt,
         role,
         status,
         email_verified,
@@ -258,10 +425,16 @@ async function login(request, env) {
     }, 401);
   }
 
-  const valid = await verifyPassword(
-    password,
-    user.password_hash
-  );
+  // ----------------------------------------------
+  // Password verification
+  // ----------------------------------------------
+
+  const valid =
+    await verifyPassword(
+      password,
+      user.password_hash,
+      user.password_salt
+    );
 
   if (!valid) {
     return json({
@@ -270,89 +443,72 @@ async function login(request, env) {
     }, 401);
   }
 
-  // Pending account
+  // ----------------------------------------------
+  // Pending
+  // ----------------------------------------------
+
   if (user.status === "pending") {
     return json({
       ok: false,
       pending: true,
-      error: "Your account is pending Master/Admin approval."
+      error:
+        "Your account is pending Master/Admin approval."
     }, 403);
   }
 
-  // Blocked account
+  // ----------------------------------------------
+  // Blocked
+  // ----------------------------------------------
+
   if (user.status === "blocked") {
     return json({
       ok: false,
       blocked: true,
-      error: "Your account has been blocked by the Master/Admin."
+      error:
+        "Your account has been blocked by the Master/Admin."
     }, 403);
   }
 
+  // ----------------------------------------------
+  // Active
+  // ----------------------------------------------
+
   return json({
     ok: true,
+
     user: {
       id: user.id,
       name: user.name,
-      businessName: user.business_name,
+      businessName: user.business_name || "",
       email: user.email,
-      mobile: user.mobile,
-      country: user.country,
+      mobile: user.mobile || "",
+      country: user.country || "",
       role: user.role,
       status: user.status,
-      emailVerified: !!user.email_verified,
-      termsVersion: user.terms_version
-    }
+      emailVerified:
+        Number(user.email_verified || 0) === 1,
+      termsVersion:
+        user.terms_version || ""
+    },
+
+    message: "Login successful."
   });
 }
 
 
-// ===============================
+// ==================================================
 // PASSWORD HASH
-// ===============================
+// ==================================================
 
 async function hashPassword(password) {
 
-  const salt = crypto.getRandomValues(
-    new Uint8Array(16)
-  );
+  const salt =
+    crypto.getRandomValues(
+      new Uint8Array(16)
+    );
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: 100000,
-      hash: "SHA-256"
-    },
-    key,
-    256
-  );
-
-  return `${toBase64(salt)}.${toBase64(new Uint8Array(bits))}`;
-}
-
-
-async function verifyPassword(password, stored) {
-
-  try {
-
-    const parts = stored.split(".");
-
-    if (parts.length !== 2) {
-      return false;
-    }
-
-    const salt = fromBase64(parts[0]);
-    const expected = fromBase64(parts[1]);
-
-    const key = await crypto.subtle.importKey(
+  const key =
+    await crypto.subtle.importKey(
       "raw",
       new TextEncoder().encode(password),
       "PBKDF2",
@@ -360,7 +516,8 @@ async function verifyPassword(password, stored) {
       ["deriveBits"]
     );
 
-    const bits = await crypto.subtle.deriveBits(
+  const bits =
+    await crypto.subtle.deriveBits(
       {
         name: "PBKDF2",
         salt,
@@ -371,16 +528,77 @@ async function verifyPassword(password, stored) {
       256
     );
 
-    const actual = new Uint8Array(bits);
+  return {
+    salt: toBase64(salt),
+    hash: toBase64(
+      new Uint8Array(bits)
+    )
+  };
+}
 
-    if (actual.length !== expected.length) {
+
+// ==================================================
+// PASSWORD VERIFY
+// ==================================================
+
+async function verifyPassword(
+  password,
+  storedHash,
+  storedSalt
+) {
+
+  try {
+
+    if (!storedHash || !storedSalt) {
+      return false;
+    }
+
+    const salt =
+      fromBase64(storedSalt);
+
+    const expected =
+      fromBase64(storedHash);
+
+    const key =
+      await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+
+    const bits =
+      await crypto.subtle.deriveBits(
+        {
+          name: "PBKDF2",
+          salt,
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        key,
+        256
+      );
+
+    const actual =
+      new Uint8Array(bits);
+
+    if (
+      actual.length !==
+      expected.length
+    ) {
       return false;
     }
 
     let result = 0;
 
-    for (let i = 0; i < actual.length; i++) {
-      result |= actual[i] ^ expected[i];
+    for (
+      let i = 0;
+      i < actual.length;
+      i++
+    ) {
+      result |=
+        actual[i] ^ expected[i];
     }
 
     return result === 0;
@@ -391,15 +609,16 @@ async function verifyPassword(password, stored) {
 }
 
 
-// ===============================
-// HELPERS
-// ===============================
+// ==================================================
+// BASE64
+// ==================================================
 
 function toBase64(bytes) {
+
   let binary = "";
 
-  for (const b of bytes) {
-    binary += String.fromCharCode(b);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
   }
 
   return btoa(binary);
@@ -407,36 +626,62 @@ function toBase64(bytes) {
 
 
 function fromBase64(value) {
-  const binary = atob(value);
 
-  const bytes = new Uint8Array(binary.length);
+  const binary =
+    atob(value);
 
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+  const bytes =
+    new Uint8Array(
+      binary.length
+    );
+
+  for (
+    let i = 0;
+    i < binary.length;
+    i++
+  ) {
+    bytes[i] =
+      binary.charCodeAt(i);
   }
 
   return bytes;
 }
 
 
+// ==================================================
+// CORS
+// ==================================================
+
 function cors() {
+
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    "Access-Control-Allow-Methods":
+      "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization"
   };
 }
 
 
-function json(data, status = 200) {
+// ==================================================
+// JSON RESPONSE
+// ==================================================
+
+function json(
+  data,
+  status = 200
+) {
 
   return new Response(
     JSON.stringify(data),
     {
       status,
+
       headers: {
         ...cors(),
-        "Content-Type": "application/json; charset=utf-8"
+        "Content-Type":
+          "application/json; charset=utf-8"
       }
     }
   );
