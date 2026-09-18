@@ -1,32 +1,443 @@
-const JSON_HEADERS={"content-type":"application/json;charset=UTF-8","cache-control":"no-store"};
-const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:JSON_HEADERS});
-function cors(r){r.headers.set("Access-Control-Allow-Origin","*");r.headers.set("Access-Control-Allow-Headers","Content-Type, Authorization");r.headers.set("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS");return r}
-function b64u(data){return btoa(String.fromCharCode(...new Uint8Array(data))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"")}
-function ub64(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
-async function hashPassword(password,saltValue){const salt=saltValue?ub64(saltValue):crypto.getRandomValues(new Uint8Array(16));const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:100000,hash:"SHA-256"},key,256);return{salt:b64u(salt),hash:b64u(bits)}}
-async function sign(payload,secret){const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);const body=b64u(new TextEncoder().encode(JSON.stringify(payload)));const sig=b64u(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(body)));return `${body}.${sig}`}
-async function verifyToken(token,secret){try{if(!token||!secret)return null;const p=token.split(".");if(p.length!==2)return null;const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["verify"]);if(!await crypto.subtle.verify("HMAC",key,ub64(p[1]),new TextEncoder().encode(p[0])))return null;const payload=JSON.parse(new TextDecoder().decode(ub64(p[0])));return payload.exp>Date.now()?payload:null}catch{return null}}
-const id=()=>crypto.randomUUID();
-async function getUser(request,env){const h=request.headers.get("Authorization")||"";const t=h.startsWith("Bearer ")?h.slice(7):"";const p=await verifyToken(t,env.APP_SECRET);if(!p)return null;return await env.DB.prepare("SELECT id,email,name,mobile,business_name,country,role FROM users WHERE id=?").bind(p.sub).first()}
-async function audit(env,user,action,entity,entityId,details={}){try{await env.DB.prepare("INSERT INTO audit_log(id,user_id,action,entity,entity_id,details,created_at) VALUES(?,?,?,?,?,?,datetime('now'))").bind(id(),user?.id||null,action,entity,entityId,JSON.stringify(details)).run()}catch{}}
-function cleanType(s){return String(s||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,60)}
-async function readRecord(env,userId,type, fallback=[]){const r=await env.DB.prepare("SELECT id,data,version,updated_at FROM business_records WHERE user_id=? AND record_type=?").bind(userId,type).first();if(!r)return{data:fallback,version:0,updatedAt:null,id:null};try{return{data:JSON.parse(r.data),version:r.version,updatedAt:r.updated_at,id:r.id}}catch{return{data:fallback,version:r.version,updatedAt:r.updated_at,id:r.id}}}
-async function writeRecord(env,user,type,data){const now=new Date().toISOString();const old=await env.DB.prepare("SELECT id,version FROM business_records WHERE user_id=? AND record_type=?").bind(user.id,type).first();const next=(old?.version||0)+1;const rid=old?.id||id();await env.DB.prepare(`INSERT INTO business_records(id,user_id,record_type,data,version,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,record_type) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at`).bind(rid,user.id,type,JSON.stringify(data),next,now).run();await audit(env,user,"save","business_records",rid,{type,version:next});return{data,version:next,updatedAt:now,id:rid}}
-function defaultMaster(){return{taxProfiles:[{id:"gst5",name:"GST 5%",rate:5},{id:"gst12",name:"GST 12%",rate:12},{id:"gst18",name:"GST 18%",rate:18},{id:"gst28",name:"GST 28%",rate:28}],paymentMethods:[{id:"cash",name:"Cash",status:"active"},{id:"upi",name:"UPI",status:"active"},{id:"bank",name:"Bank Transfer",status:"active"},{id:"card",name:"Card",status:"active"},{id:"credit",name:"Credit",status:"active"}],roles:[{id:"owner",name:"Owner/Admin",permissions:["view","create","edit","delete","approve","export"]},{id:"manager",name:"Manager",permissions:["view","create","edit","approve","export"]},{id:"accountant",name:"Accountant",permissions:["view","create","edit","export"]},{id:"billing",name:"Billing Operator",permissions:["view","create"]},{id:"inventory",name:"Inventory Manager",permissions:["view","create","edit"]},{id:"sales",name:"Salesperson",permissions:["view","create"]},{id:"viewer",name:"Viewer",permissions:["view"]}],terms:[{id:"general",name:"General Terms",text:"Goods once sold are subject to applicable business terms."},{id:"payment",name:"Payment Terms",text:"Payment is due as agreed on the invoice."}],customData:[]}}
-async function handle(request,env){const url=new URL(request.url);if(request.method==="OPTIONS")return new Response(null,{status:204});
-if(url.pathname==="/api/health"&&request.method==="GET")return json({ok:true,service:"SENQUARA ONE Cloudflare D1 API",time:new Date().toISOString()});
-if(url.pathname==="/api/auth/register"&&request.method==="POST"){const body=await request.json();if(!body.email||!body.password||!body.name||!body.businessName)return json({error:"Required registration fields are missing"},400);const email=String(body.email).trim().toLowerCase();if(await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first())return json({error:"Email already registered"},409);const pw=await hashPassword(String(body.password));const uid=id();await env.DB.prepare("INSERT INTO users(id,email,name,mobile,business_name,country,password_hash,password_salt,role,created_at) VALUES(?,?,?,?,?,?,?,?,?,datetime('now'))").bind(uid,email,String(body.name).trim(),body.mobile||"",String(body.businessName).trim(),body.country||"",pw.hash,pw.salt,"owner").run();await env.DB.prepare("INSERT OR IGNORE INTO user_roles(id,user_id,role_id) VALUES(?,?,?)").bind(id(),uid,"owner").run();const token=await sign({sub:uid,exp:Date.now()+7*24*60*60*1000},env.APP_SECRET);return json({token,user:{id:uid,name:body.name,email,mobile:body.mobile||"",business:{name:body.businessName,country:body.country||""},role:"owner"}})}
-if(url.pathname==="/api/auth/login"&&request.method==="POST"){const body=await request.json();const email=String(body.email||"").trim().toLowerCase();const user=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();if(!user)return json({error:"Invalid email or password"},401);const pw=await hashPassword(String(body.password||""),user.password_salt);if(pw.hash!==user.password_hash)return json({error:"Invalid email or password"},401);const token=await sign({sub:user.id,exp:Date.now()+7*24*60*60*1000},env.APP_SECRET);return json({token,user:{id:user.id,name:user.name,email:user.email,mobile:user.mobile,business:{name:user.business_name,country:user.country},role:user.role}})}
-const user=await getUser(request,env);if(!user)return json({error:"Authentication required"},401);
-if(url.pathname==="/api/auth/me"&&request.method==="GET")return json({user:{id:user.id,name:user.name,email:user.email,mobile:user.mobile,business:{name:user.business_name,country:user.country},role:user.role}});
-if(url.pathname==="/api/data"&&request.method==="GET"){const type=cleanType(url.searchParams.get("type"));if(!type)return json({error:"type is required"},400);return json(await readRecord(env,user.id,type,[]))}
-if(url.pathname==="/api/data"&&request.method==="PUT"){const body=await request.json();const type=cleanType(body.type);if(!type)return json({error:"type is required"},400);return json(await writeRecord(env,user,type,body.data??{}))}
-if(url.pathname==="/api/dashboard"&&request.method==="GET"){const types=["invoices","products","people","payments","expenses","quotes","orders","receipts","returns"];const out={};for(const t of types)out[t]=(await readRecord(env,user.id,t,[])).data;return json(out)}
-if(url.pathname==="/api/master"&&request.method==="GET"){const r=await readRecord(env,user.id,"master",defaultMaster());return json(r)}
-if(url.pathname==="/api/master"&&request.method==="PUT"){if(user.role!=="owner")return json({error:"Owner/Admin approval required"},403);const body=await request.json();return json(await writeRecord(env,user,"master",body.data||defaultMaster()))}
-if(url.pathname==="/api/profile"&&request.method==="PUT"){const body=await request.json();await env.DB.prepare("UPDATE users SET name=?,mobile=?,business_name=?,country=? WHERE id=?").bind(body.name||user.name,body.mobile||"",body.businessName||user.business_name,body.country||user.country,user.id).run();await audit(env,user,"update","profile",user.id,{});return json({user:{...user,name:body.name||user.name,mobile:body.mobile||"",business_name:body.businessName||user.business_name,country:body.country||user.country}})}
-if(url.pathname==="/api/users"&&request.method==="GET"){const rows=await env.DB.prepare("SELECT id,email,name,mobile,business_name,country,role,created_at FROM users ORDER BY created_at DESC").all();return json({users:rows.results||[]})}
-if(url.pathname==="/api/users/role"&&request.method==="PUT"){if(user.role!=="owner")return json({error:"Owner/Admin only"},403);const body=await request.json();if(!body.userId||!body.role)return json({error:"userId and role required"},400);await env.DB.prepare("UPDATE users SET role=? WHERE id=?").bind(body.role,body.userId).run();await env.DB.prepare("INSERT OR IGNORE INTO user_roles(id,user_id,role_id) VALUES(?,?,?)").bind(id(),body.userId,body.role).run();await audit(env,user,"role_change","users",body.userId,{role:body.role});return json({ok:true})}
-if(url.pathname==="/api/audit"&&request.method==="GET"){const rows=await env.DB.prepare("SELECT * FROM audit_log WHERE user_id=? ORDER BY created_at DESC LIMIT 200").bind(user.id).all();return json({logs:rows.results||[]})}
-return json({error:"Not found"},404)}
-export default{async fetch(request,env){try{return cors(await handle(request,env))}catch(error){return cors(json({error:"Server error",detail:String(error?.message||error)},500))}}};
+// SENQUARA ONE
+// STEP 1 — Registration + Pending + Master foundation
+// One Platform. Everything Connected.
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // CORS
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: cors()
+      });
+    }
+
+    try {
+      // Health check
+      if (url.pathname === "/api/health" && request.method === "GET") {
+        return json({
+          ok: true,
+          app: "SENQUARA ONE",
+          version: "STEP 1"
+        });
+      }
+
+      // Server-observed IP
+      if (url.pathname === "/api/ip" && request.method === "GET") {
+        return json({
+          ip: request.headers.get("CF-Connecting-IP") || "",
+          country: request.cf?.country || "",
+          colo: request.cf?.colo || "",
+          ray: request.headers.get("CF-Ray") || ""
+        });
+      }
+
+      // Registration
+      if (url.pathname === "/api/auth/register" && request.method === "POST") {
+        return await register(request, env);
+      }
+
+      // Login
+      if (url.pathname === "/api/auth/login" && request.method === "POST") {
+        return await login(request, env);
+      }
+
+      // Logout
+      if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+        return json({ ok: true, message: "Logged out" });
+      }
+
+      return json({
+        ok: false,
+        error: "Route not found"
+      }, 404);
+
+    } catch (err) {
+      return json({
+        ok: false,
+        error: err?.message || "Server error"
+      }, 500);
+    }
+  }
+};
+
+
+// ===============================
+// REGISTRATION
+// ===============================
+
+async function register(request, env) {
+
+  const body = await request.json();
+
+  const name = String(body.name || "").trim();
+  const businessName = String(body.businessName || "").trim();
+  const email = String(body.email || "").trim().toLowerCase();
+  const mobile = String(body.mobile || "").trim();
+  const country = String(body.country || "").trim();
+  const password = String(body.password || "");
+  const termsAccepted = body.termsAccepted === true;
+  const termsVersion = String(body.termsVersion || "1.0");
+
+  if (!name || !email || !mobile || !password) {
+    return json({
+      ok: false,
+      error: "Name, email, mobile and password are required."
+    }, 400);
+  }
+
+  if (!termsAccepted) {
+    return json({
+      ok: false,
+      error: "Please accept the registration Terms and Conditions."
+    }, 400);
+  }
+
+  if (password.length < 8) {
+    return json({
+      ok: false,
+      error: "Password must contain at least 8 characters."
+    }, 400);
+  }
+
+  // Check whether this is the first account
+  const countResult = await env.DB
+    .prepare("SELECT COUNT(*) AS total FROM users")
+    .first();
+
+  const totalUsers = Number(countResult?.total || 0);
+
+  // Check duplicate email
+  const existing = await env.DB
+    .prepare("SELECT id FROM users WHERE email = ? LIMIT 1")
+    .bind(email)
+    .first();
+
+  if (existing) {
+    return json({
+      ok: false,
+      error: "This email is already registered."
+    }, 409);
+  }
+
+  const passwordHash = await hashPassword(password);
+
+  const id = crypto.randomUUID();
+
+  // First registered account becomes Owner/Master.
+  // All later accounts remain pending.
+  const firstUser = totalUsers === 0;
+
+  const role = firstUser ? "owner" : "viewer";
+  const status = firstUser ? "active" : "pending";
+
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(`
+    INSERT INTO users (
+      id,
+      name,
+      business_name,
+      email,
+      mobile,
+      country,
+      password_hash,
+      role,
+      status,
+      email_verified,
+      terms_version,
+      terms_accepted_at,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+    .bind(
+      id,
+      name,
+      businessName,
+      email,
+      mobile,
+      country,
+      passwordHash,
+      role,
+      status,
+      firstUser ? 1 : 0,
+      termsVersion,
+      now,
+      now,
+      now
+    )
+    .run();
+
+  // First account
+  if (firstUser) {
+    return json({
+      ok: true,
+      firstAccount: true,
+      user: {
+        id,
+        name,
+        businessName,
+        email,
+        mobile,
+        country,
+        role: "owner",
+        status: "active"
+      },
+      message: "Initial Master/Admin account created."
+    });
+  }
+
+  // Later accounts
+  return json({
+    ok: true,
+    firstAccount: false,
+    pending: true,
+    user: {
+      id,
+      name,
+      businessName,
+      email,
+      mobile,
+      country,
+      role,
+      status
+    },
+    message:
+      "Registration received. Your account is pending Master/Admin approval."
+  });
+}
+
+
+// ===============================
+// LOGIN
+// ===============================
+
+async function login(request, env) {
+
+  const body = await request.json();
+
+  const email = String(body.email || "").trim().toLowerCase();
+  const password = String(body.password || "");
+
+  if (!email || !password) {
+    return json({
+      ok: false,
+      error: "Email and password are required."
+    }, 400);
+  }
+
+  const user = await env.DB
+    .prepare(`
+      SELECT
+        id,
+        name,
+        business_name,
+        email,
+        mobile,
+        country,
+        password_hash,
+        role,
+        status,
+        email_verified,
+        terms_version
+      FROM users
+      WHERE email = ?
+      LIMIT 1
+    `)
+    .bind(email)
+    .first();
+
+  if (!user) {
+    return json({
+      ok: false,
+      error: "Invalid email or password."
+    }, 401);
+  }
+
+  const valid = await verifyPassword(
+    password,
+    user.password_hash
+  );
+
+  if (!valid) {
+    return json({
+      ok: false,
+      error: "Invalid email or password."
+    }, 401);
+  }
+
+  // Pending account
+  if (user.status === "pending") {
+    return json({
+      ok: false,
+      pending: true,
+      error: "Your account is pending Master/Admin approval."
+    }, 403);
+  }
+
+  // Blocked account
+  if (user.status === "blocked") {
+    return json({
+      ok: false,
+      blocked: true,
+      error: "Your account has been blocked by the Master/Admin."
+    }, 403);
+  }
+
+  return json({
+    ok: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      businessName: user.business_name,
+      email: user.email,
+      mobile: user.mobile,
+      country: user.country,
+      role: user.role,
+      status: user.status,
+      emailVerified: !!user.email_verified,
+      termsVersion: user.terms_version
+    }
+  });
+}
+
+
+// ===============================
+// PASSWORD HASH
+// ===============================
+
+async function hashPassword(password) {
+
+  const salt = crypto.getRandomValues(
+    new Uint8Array(16)
+  );
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    key,
+    256
+  );
+
+  return `${toBase64(salt)}.${toBase64(new Uint8Array(bits))}`;
+}
+
+
+async function verifyPassword(password, stored) {
+
+  try {
+
+    const parts = stored.split(".");
+
+    if (parts.length !== 2) {
+      return false;
+    }
+
+    const salt = fromBase64(parts[0]);
+    const expected = fromBase64(parts[1]);
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    );
+
+    const bits = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      key,
+      256
+    );
+
+    const actual = new Uint8Array(bits);
+
+    if (actual.length !== expected.length) {
+      return false;
+    }
+
+    let result = 0;
+
+    for (let i = 0; i < actual.length; i++) {
+      result |= actual[i] ^ expected[i];
+    }
+
+    return result === 0;
+
+  } catch {
+    return false;
+  }
+}
+
+
+// ===============================
+// HELPERS
+// ===============================
+
+function toBase64(bytes) {
+  let binary = "";
+
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
+  }
+
+  return btoa(binary);
+}
+
+
+function fromBase64(value) {
+  const binary = atob(value);
+
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return bytes;
+}
+
+
+function cors() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+  };
+}
+
+
+function json(data, status = 200) {
+
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        ...cors(),
+        "Content-Type": "application/json; charset=utf-8"
+      }
+    }
+  );
+}
