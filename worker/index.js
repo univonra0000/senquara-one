@@ -13,11 +13,68 @@ function cleanType(s){return String(s||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0
 async function readRecord(env,userId,type, fallback=[]){const r=await env.DB.prepare("SELECT id,data,version,updated_at FROM business_records WHERE user_id=? AND record_type=?").bind(userId,type).first();if(!r)return{data:fallback,version:0,updatedAt:null,id:null};try{return{data:JSON.parse(r.data),version:r.version,updatedAt:r.updated_at,id:r.id}}catch{return{data:fallback,version:r.version,updatedAt:r.updated_at,id:r.id}}}
 async function writeRecord(env,user,type,data){const now=new Date().toISOString();const old=await env.DB.prepare("SELECT id,version FROM business_records WHERE user_id=? AND record_type=?").bind(user.id,type).first();const next=(old?.version||0)+1;const rid=old?.id||id();await env.DB.prepare(`INSERT INTO business_records(id,user_id,record_type,data,version,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,record_type) DO UPDATE SET data=excluded.data,version=excluded.version,updated_at=excluded.updated_at`).bind(rid,user.id,type,JSON.stringify(data),next,now).run();await audit(env,user,"save","business_records",rid,{type,version:next});return{data,version:next,updatedAt:now,id:rid}}
 function defaultMaster(){return{taxProfiles:[{id:"gst5",name:"GST 5%",rate:5},{id:"gst12",name:"GST 12%",rate:12},{id:"gst18",name:"GST 18%",rate:18},{id:"gst28",name:"GST 28%",rate:28}],paymentMethods:[{id:"cash",name:"Cash",status:"active"},{id:"upi",name:"UPI",status:"active"},{id:"bank",name:"Bank Transfer",status:"active"},{id:"card",name:"Card",status:"active"},{id:"credit",name:"Credit",status:"active"}],roles:[{id:"owner",name:"Owner/Admin",permissions:["view","create","edit","delete","approve","export"]},{id:"manager",name:"Manager",permissions:["view","create","edit","approve","export"]},{id:"accountant",name:"Accountant",permissions:["view","create","edit","export"]},{id:"billing",name:"Billing Operator",permissions:["view","create"]},{id:"inventory",name:"Inventory Manager",permissions:["view","create","edit"]},{id:"sales",name:"Salesperson",permissions:["view","create"]},{id:"viewer",name:"Viewer",permissions:["view"]}],terms:[{id:"general",name:"General Terms",text:"Goods once sold are subject to applicable business terms."},{id:"payment",name:"Payment Terms",text:"Payment is due as agreed on the invoice."}],customData:[]}}
+
+async function ensurePresenceTables(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_presence(
+    user_id TEXT PRIMARY KEY, ip TEXT, country TEXT, region TEXT, city TEXT,
+    latitude REAL, longitude REAL, timezone TEXT, colo TEXT,
+    presence_status TEXT NOT NULL DEFAULT 'online', last_error TEXT,
+    last_seen TEXT NOT NULL, updated_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_last_seen ON user_presence(last_seen)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_status ON user_presence(presence_status)`).run();
+  try{await env.DB.prepare(`ALTER TABLE users ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0`).run()}catch{}
+  try{await env.DB.prepare(`ALTER TABLE users ADD COLUMN blocked_at TEXT`).run()}catch{}
+}
+function requestGeo(request){
+  const cf=request.cf||{};
+  return {ip:request.headers.get('CF-Connecting-IP')||'',country:cf.country||request.headers.get('CF-IPCountry')||'',region:cf.region||'',city:cf.city||'',
+    latitude:cf.latitude==null?null:Number(cf.latitude),longitude:cf.longitude==null?null:Number(cf.longitude),
+    timezone:cf.timezone||'',colo:cf.colo||''};
+}
+async function presenceHeartbeat(request,env,user){
+  await ensurePresenceTables(env);
+  const body=await request.json().catch(()=>({})),g=requestGeo(request);
+  const status=['online','problem'].includes(body.status)?body.status:'online',err=String(body.error||'').slice(0,250),now=new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO user_presence(user_id,ip,country,region,city,latitude,longitude,timezone,colo,presence_status,last_error,last_seen,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET ip=excluded.ip,country=excluded.country,region=excluded.region,city=excluded.city,
+    latitude=excluded.latitude,longitude=excluded.longitude,timezone=excluded.timezone,colo=excluded.colo,presence_status=excluded.presence_status,
+    last_error=excluded.last_error,last_seen=excluded.last_seen,updated_at=excluded.updated_at`)
+    .bind(user.id,g.ip,g.country,g.region,g.city,g.latitude,g.longitude,g.timezone,g.colo,status,err,now,now).run();
+  return json({ok:true,last_seen:now});
+}
+async function presenceList(env){
+  await ensurePresenceTables(env);
+  const rows=await env.DB.prepare(`SELECT u.id,u.email,u.name,u.mobile,u.country AS user_country,u.role,u.created_at,u.blocked,u.blocked_at,
+    p.ip,p.country,p.region,p.city,p.latitude,p.longitude,p.timezone,p.colo,p.presence_status,p.last_error,p.last_seen,p.updated_at
+    FROM users u LEFT JOIN user_presence p ON p.user_id=u.id ORDER BY u.created_at DESC`).all();
+  const six=Date.now()-183*86400000,active=Date.now()-90000;
+  const users=(rows.results||[]).map(r=>({...r,country:r.country||r.user_country||'',status:Number(r.blocked)?'offline':
+    (r.presence_status==='problem'||r.last_error)?'problem':
+    (r.last_seen&&new Date(r.last_seen).getTime()>=active)?'online':
+    ((r.last_seen&&new Date(r.last_seen).getTime()<six)||(!r.last_seen&&new Date(r.created_at).getTime()<six))?'pink':'offline'}));
+  return {users,online_count:users.filter(x=>x.status==='online').length,new_users:users.filter(x=>Date.now()-new Date(x.created_at).getTime()<15*60*1000).length};
+}
+async function blockUser(env,actor,body){
+  if(actor.role!=='owner')return json({error:'Owner/Admin only'},403);
+  if(!body.userId)return json({error:'userId is required'},400);
+  if(body.userId===actor.id)return json({error:'You cannot block your own account'},400);
+  const blocked=!!body.blocked,at=blocked?new Date().toISOString():null;
+  await env.DB.prepare(`UPDATE users SET blocked=?,blocked_at=? WHERE id=?`).bind(blocked?1:0,at,body.userId).run();
+  await audit(env,actor,blocked?'block_user':'unblock_user','users',body.userId,{blocked});
+  return json({ok:true,blocked});
+}
 async function handle(request,env){const url=new URL(request.url);if(request.method==="OPTIONS")return new Response(null,{status:204});
 if(url.pathname==="/api/health"&&request.method==="GET")return json({ok:true,service:"SENQUARA ONE Cloudflare D1 API",time:new Date().toISOString()});
 if(url.pathname==="/api/auth/register"&&request.method==="POST"){const body=await request.json();if(!body.email||!body.password||!body.name||!body.businessName)return json({error:"Required registration fields are missing"},400);const email=String(body.email).trim().toLowerCase();if(await env.DB.prepare("SELECT id FROM users WHERE email=?").bind(email).first())return json({error:"Email already registered"},409);const pw=await hashPassword(String(body.password));const uid=id();await env.DB.prepare("INSERT INTO users(id,email,name,mobile,business_name,country,password_hash,password_salt,role,created_at) VALUES(?,?,?,?,?,?,?,?,?,datetime('now'))").bind(uid,email,String(body.name).trim(),body.mobile||"",String(body.businessName).trim(),body.country||"",pw.hash,pw.salt,"owner").run();await env.DB.prepare("INSERT OR IGNORE INTO user_roles(id,user_id,role_id) VALUES(?,?,?)").bind(id(),uid,"owner").run();const token=await sign({sub:uid,exp:Date.now()+7*24*60*60*1000},env.APP_SECRET);return json({token,user:{id:uid,name:body.name,email,mobile:body.mobile||"",business:{name:body.businessName,country:body.country||""},role:"owner"}})}
-if(url.pathname==="/api/auth/login"&&request.method==="POST"){const body=await request.json();const email=String(body.email||"").trim().toLowerCase();const user=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();if(!user)return json({error:"Invalid email or password"},401);const pw=await hashPassword(String(body.password||""),user.password_salt);if(pw.hash!==user.password_hash)return json({error:"Invalid email or password"},401);const token=await sign({sub:user.id,exp:Date.now()+7*24*60*60*1000},env.APP_SECRET);return json({token,user:{id:user.id,name:user.name,email:user.email,mobile:user.mobile,business:{name:user.business_name,country:user.country},role:user.role}})}
+if(url.pathname==="/api/auth/login"&&request.method==="POST"){const body=await request.json();const email=String(body.email||"").trim().toLowerCase();const user=await env.DB.prepare("SELECT * FROM users WHERE email=?").bind(email).first();if(!user)return json({error:"Invalid email or password"},401);if(Number(user.blocked||0)===1)return json({error:"This account is blocked. Contact Owner/Admin."},403);const pw=await hashPassword(String(body.password||""),user.password_salt);if(pw.hash!==user.password_hash)return json({error:"Invalid email or password"},401);const token=await sign({sub:user.id,exp:Date.now()+7*24*60*60*1000},env.APP_SECRET);return json({token,user:{id:user.id,name:user.name,email:user.email,mobile:user.mobile,business:{name:user.business_name,country:user.country},role:user.role}})}
 const user=await getUser(request,env);if(!user)return json({error:"Authentication required"},401);
+if(url.pathname==="/api/presence/heartbeat"&&request.method==="POST")return presenceHeartbeat(request,env,user);
+if(url.pathname==="/api/presence"&&request.method==="GET"){if(user.role!=="owner"&&user.role!=="manager")return json({error:"Manager/Admin access required"},403);return json(await presenceList(env));}
+if(url.pathname==="/api/presence/summary"&&request.method==="GET"){if(user.role!=="owner"&&user.role!=="manager")return json({error:"Manager/Admin access required"},403);const p=await presenceList(env);return json({online_count:p.online_count,new_users:p.new_users,total_users:p.users.length});}
+if(url.pathname==="/api/users/block"&&request.method==="PUT")return blockUser(env,user,await request.json());
+
 if(url.pathname==="/api/auth/me"&&request.method==="GET")return json({user:{id:user.id,name:user.name,email:user.email,mobile:user.mobile,business:{name:user.business_name,country:user.country},role:user.role}});
 if(url.pathname==="/api/data"&&request.method==="GET"){const type=cleanType(url.searchParams.get("type"));if(!type)return json({error:"type is required"},400);return json(await readRecord(env,user.id,type,[]))}
 if(url.pathname==="/api/data"&&request.method==="PUT"){const body=await request.json();const type=cleanType(body.type);if(!type)return json({error:"type is required"},400);return json(await writeRecord(env,user,type,body.data??{}))}
