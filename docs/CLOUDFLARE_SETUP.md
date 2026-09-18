@@ -1,17 +1,41 @@
-# SENQUARA ONE Cloudflare D1 Setup — Android-friendly
+# SENQUARA ONE — Cloudflare Android deployment
 
-1. Open Cloudflare Dashboard.
-2. Open **Workers & Pages → D1**.
-3. Create database: `senquara-one-db`.
-4. Copy the D1 database ID.
-5. On a computer/Termux, install Wrangler and run `wrangler login`.
-6. Put the ID into `wrangler.toml`.
-7. Run the two D1 schema commands in README.
-8. Set `APP_SECRET` with `wrangler secret put APP_SECRET`.
-9. Run `wrangler deploy`.
-10. Open the Worker URL and test `/api/health`.
-11. Register a TEST account.
-12. Add a customer/product.
-13. Press Sync. The record is then stored in D1.
+## 1. GitHub
+Commit the project files to the branch used by the Cloudflare Worker Build.
 
-Never send Cloudflare passwords, API tokens, database IDs plus secrets, or payment credentials in chat.
+## 2. D1
+Open Cloudflare → D1 → `senquara-one-db` → Console.
+
+For the existing database, run:
+
+`database/current_db_finalize.sql`
+
+The earlier user/status/terms ALTER commands are already applied in this working copy. If setting up a fresh database, use `database/schema_v2.sql` instead.
+
+## 3. Worker
+`wrangler.toml` points to:
+
+- Worker entry: `worker/index.js`
+- Assets: `public/`
+- D1 binding: `DB`
+
+The duplicate `worker/worker.js` is kept synchronized as a reference; it is not the Wrangler entrypoint.
+
+## 4. Test
+Open:
+
+`/api/health`
+
+Expected JSON contains `"ok":true` and `"version":"V3"`.
+
+## 5. Registration test
+- Create the first account.
+- The first account becomes `owner` / Master and is active.
+- Create a second account.
+- The second account receives the Pending Approval screen.
+- Log in with the first account and open Master Panel.
+- Approve the second account.
+- The second account can then log in.
+
+## 6. Email verification
+This V3 package does not claim that transactional email is configured. Cloudflare Email Service requires an onboarded sending domain and a `send_email` binding. Add that only after the domain is configured; then the authentication step can add single-use expiring verification links.
