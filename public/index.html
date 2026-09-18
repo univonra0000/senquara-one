@@ -1,300 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0b102d">
-  <title>SENQUARA ONES</title>
-  <style>
-    :root{
-      --bg:#080d26; --panel:#111936; --panel2:#171f48; --border:#2a3565;
-      --text:#f5f7ff; --muted:#aeb6d4; --primary:#8d78ff; --primary2:#765df5;
-      --success:#39d6b2; --danger:#ff718d; --shadow:0 14px 35px rgba(0,0,0,.25);
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
-    button,input,select,textarea{font:inherit}
-    button{cursor:pointer}
-    .app{min-height:100vh;display:flex}
-    .sidebar{width:260px;background:#0c1230;border-right:1px solid var(--border);padding:22px 16px;position:fixed;inset:0 auto 0 0;z-index:30;overflow:auto}
-    .brand{padding:8px 10px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
-    .brand h1{font-size:20px;letter-spacing:3px;margin:0 0 4px}
-    .brand p{margin:0;color:var(--muted);font-size:12px}
-    .nav{display:grid;gap:6px}
-    .nav button{width:100%;text-align:left;background:transparent;border:0;color:var(--muted);padding:12px 13px;border-radius:10px}
-    .nav button:hover,.nav button.active{background:var(--panel2);color:#fff}
-    .main{margin-left:260px;width:calc(100% - 260px);min-width:0}
-    .topbar{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(8,13,38,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
-    .menuBtn{display:none;background:transparent;border:0;color:#fff;font-size:30px}
-    .content{padding:28px;max-width:1400px;margin:auto}
-    .page{display:none}.page.active{display:block}
-    h2{margin:0 0 7px;font-size:28px}.subtitle{color:var(--muted);margin:0 0 24px}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
-    .stat strong{display:block;font-size:27px;margin-top:8px}.muted{color:var(--muted)}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
-    .btn{border:0;border-radius:10px;padding:11px 16px;color:#fff;background:var(--panel2)}
-    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary2))}
-    .btn.success{background:#167d69}.btn.danger{background:#8f2944}
-    .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    label{display:block;color:var(--muted);font-size:14px;margin-bottom:7px}
-    input,select,textarea{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--border);background:#080e28;color:#fff;outline:none}
-    input:focus,select:focus,textarea:focus{border-color:var(--primary)}
-    textarea{min-height:90px;resize:vertical}
-    .tableWrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}.table th{color:var(--muted);font-size:13px}
-    .invoice{max-width:900px;margin:auto;background:#fff;color:#111;border-radius:12px;padding:30px}
-    .invoice input,.invoice select,.invoice textarea{color:#111;background:#fff;border-color:#ddd}
-    .toast{position:fixed;right:20px;bottom:20px;background:#151e43;border:1px solid var(--border);padding:13px 16px;border-radius:10px;display:none;z-index:100}
-    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:700px){
-      .sidebar{transform:translateX(-105%);transition:.22s;width:280px;box-shadow:var(--shadow)}
-      .sidebar.open{transform:translateX(0)}
-      .main{margin-left:0;width:100%}.topbar{padding:0 16px}.menuBtn{display:block}
-      .content{padding:18px 14px}.grid,.formgrid{grid-template-columns:1fr}
-      .topbar h3{font-size:16px}
-      .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}.overlay.show{display:block}
-    }
-    @media print{
-      .sidebar,.topbar,.noPrint,.sq-actions{display:none!important}.main{margin:0;width:100%}.content{padding:0}.page{display:none!important}.page.active{display:block!important}.invoice{box-shadow:none!important;border:0!important;border-radius:0!important;margin:0!important;padding:0!important;max-width:none!important}
-      body{background:#fff!important;color:#111!important}.tally-invoice{display:block!important}
-    }
-    .tally-invoice{position:relative;background:#fff;color:#111;border:1px solid #222;border-radius:0;padding:18px;max-width:900px;margin:20px auto;font-family:Arial,Helvetica,sans-serif;font-size:12px}
-    .tally-original{text-align:right;font-size:10px;margin-bottom:4px}
-    .tally-header{display:flex;justify-content:space-between;border:1px solid #222;min-height:100px}
-    .tally-company{flex:1;padding:12px;border-right:1px solid #222}.tally-company h1{font-size:21px;margin:0 0 8px}.tally-company div{line-height:1.5}.tally-title{width:270px;padding:12px}.tax-invoice-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:12px}
-    .tally-parties{display:grid;grid-template-columns:1fr 1fr;border:1px solid #222;border-top:0}.tally-parties>div{padding:9px;min-height:75px}.tally-parties>div+div{border-left:1px solid #222}.tally-items{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:10px}.tally-items th,.tally-items td{border:1px solid #222;padding:6px;vertical-align:top}.tally-items th{font-weight:700;background:#f4f4f4}.tally-items .num{text-align:right}.tally-items .right{text-align:right}.grand-row td{font-size:13px;background:#f4f4f4}.tally-bottom{display:grid;grid-template-columns:1fr 260px;border:1px solid #222;border-top:0;min-height:120px}.tally-bottom>div{padding:10px;line-height:1.5}.tally-bottom .signature{border-left:1px solid #222;text-align:right;display:flex;flex-direction:column;justify-content:space-between}.tally-invoice #previewCustomerAddress,.tally-invoice #previewCustomerGstin{line-height:1.5}
-    @media(max-width:700px){.tally-invoice{padding:8px;font-size:10px}.tally-header{display:block}.tally-company{border-right:0;border-bottom:1px solid #222}.tally-title{width:auto}.tally-parties,.tally-bottom{grid-template-columns:1fr}.tally-parties>div+div,.tally-bottom .signature{border-left:0;border-top:1px solid #222}.tally-items th,.tally-items td{padding:4px;font-size:9px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101828">
+<title>SENQUARA ONE — Business Dashboard</title>
+<link rel="stylesheet" href="css/dashboard-v2.css">
 </head>
 <body>
-<div class="app">
+<div class="app-shell">
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><h1>SENQUARA ONES</h1><p>One Platform. Everything Connected.</p></div>
-    <nav class="nav" id="nav">
-      <button class="active" data-page="dashboard">Dashboard</button>
-      <button data-page="products">Products</button>
-      <button data-page="customers">Customers</button>
-      <button data-page="create-invoice">Create Invoice</button>
-      <button data-page="invoices">Invoices</button>
-      <button data-page="finance">Payments &amp; Finance</button>
-      <button data-page="reports">Reports</button>
-      <button data-page="tax">Tax &amp; Invoice</button>
-      <button data-page="inventory">Inventory</button>
-      <button data-page="ip-base">IP Base Model</button>
-      <button data-page="settings">Settings</button>
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div><strong>SENQUARA ONE</strong><span>Business Control Center</span></div>
+      <button class="icon-btn mobile-only" id="closeSidebar" aria-label="Close menu">×</button>
+    </div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav id="mainNav">
+      <button class="nav-item active" data-page="dashboard"><span>▦</span> Dashboard</button>
+      <button class="nav-item" data-page="products"><span>▤</span> Products</button>
+      <button class="nav-item" data-page="customers"><span>♙</span> Customers</button>
+      <button class="nav-item" data-page="create-invoice"><span>＋</span> Create Invoice</button>
+      <button class="nav-item" data-page="invoices"><span>▣</span> Invoices</button>
+      <button class="nav-item" data-page="inventory"><span>◫</span> Inventory</button>
+      <button class="nav-item" data-page="finance"><span>₹</span> Payments & Finance</button>
+      <button class="nav-item" data-page="reports"><span>▥</span> Reports</button>
+      <button class="nav-item" data-page="tax"><span>⌁</span> Tax & Invoice</button>
+      <button class="nav-item" data-page="live-users"><span class="live-nav-dot"></span> Live Users</button>
     </nav>
+    <div class="nav-label nav-label-bottom">SYSTEM</div>
+    <nav>
+      <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
+    </nav>
+    <div class="sidebar-foot"><span class="status-dot"></span><span>Workspace ready</span></div>
   </aside>
-  <div class="overlay" id="overlay"></div>
 
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <main class="main">
     <header class="topbar">
-      <button class="menuBtn" id="menuBtn" aria-label="Open menu">☰</button>
-      <h3 id="pageTitle">Dashboard</h3>
-      <span class="muted" id="status">Online-ready</span>
+      <div class="top-left">
+        <button class="icon-btn mobile-only" id="openSidebar" aria-label="Open menu">☰</button>
+        <div>
+          <div class="eyebrow">SENQUARA ONE</div>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="live-button" id="liveTopBtn" data-page="live-users"><span class="live-dot"></span><b id="liveCount">0</b> Live</button>
+        <button class="icon-btn notification-btn" id="notificationBtn" title="Notifications">♢<span id="notificationBadge" class="notification-badge hidden">0</span></button>
+        <button class="avatar" id="profileBtn" title="Profile">SO</button>
+      </div>
     </header>
 
     <div class="content">
+      <!-- DASHBOARD -->
       <section class="page active" id="dashboard">
-        <h2>Dashboard</h2><p class="subtitle">Your business at a glance.</p>
-        <div class="grid">
-          <div class="card stat"><span class="muted">Products</span><strong id="statProducts">0</strong></div>
-          <div class="card stat"><span class="muted">Customers</span><strong id="statCustomers">0</strong></div>
-          <div class="card stat"><span class="muted">Invoices</span><strong id="statInvoices">0</strong></div>
-          <div class="card stat"><span class="muted">Outstanding</span><strong id="statOutstanding">₹0.00</strong></div>
+        <div class="page-head">
+          <div><h2>Good business, clear control.</h2><p class="muted">Sales, invoices, inventory and customer activity in one place.</p></div>
+          <button class="btn primary" data-page="create-invoice">＋ New Invoice</button>
         </div>
-        <div class="card" style="margin-top:18px">
-          <h3>Quick workflow</h3>
-          <p class="muted">1. Add Product → 2. Add Customer → 3. Create Invoice → 4. Preview → 5. Save → 6. Print/PDF</p>
-          <div class="actions"><button class="btn primary" data-go="products">Add Product</button><button class="btn" data-go="customers">Add Customer</button><button class="btn" data-go="create-invoice">Create Invoice</button></div>
+        <div class="stat-grid">
+          <article class="stat-card accent-blue"><div class="stat-icon">₹</div><div><span>Total Sales</span><strong id="dashSales">₹0.00</strong><small id="dashSalesSub">All saved invoices</small></div></article>
+          <article class="stat-card accent-green"><div class="stat-icon">▣</div><div><span>Invoices</span><strong id="dashInvoices">0</strong><small id="dashInvoiceSub">0 this month</small></div></article>
+          <article class="stat-card accent-purple"><div class="stat-icon">♙</div><div><span>Customers</span><strong id="dashCustomers">0</strong><small>Registered customers</small></div></article>
+          <article class="stat-card accent-orange"><div class="stat-icon">◫</div><div><span>Stock Units</span><strong id="dashStock">0</strong><small id="dashLowStock">0 low stock</small></div></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel sales-panel">
+            <div class="panel-head"><div><h3>Sales overview</h3><p class="muted">Monthly invoice totals</p></div><select id="salesRange" class="compact-select"><option value="6">Last 6 months</option><option value="12">Last 12 months</option></select></div>
+            <div class="chart" id="salesChart"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Quick actions</h3><p class="muted">Common tasks</p></div></div>
+            <div class="quick-grid">
+              <button class="quick-card" data-page="create-invoice"><span>＋</span><b>Create invoice</b><small>Bill a customer</small></button>
+              <button class="quick-card" data-page="products"><span>▤</span><b>Add product</b><small>Set price & GST</small></button>
+              <button class="quick-card" data-page="customers"><span>♙</span><b>Add customer</b><small>Save billing details</small></button>
+              <button class="quick-card" data-page="inventory"><span>◫</span><b>Check stock</b><small>Low stock items</small></button>
+            </div>
+          </article>
+        </div>
+        <div class="dashboard-grid lower">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Recent invoices</h3><p class="muted">Latest saved documents</p></div><button class="text-btn" data-page="invoices">View all →</button></div>
+            <div id="dashRecentInvoices"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Inventory alerts</h3><p class="muted">Items needing attention</p></div><button class="text-btn" data-page="inventory">Inventory →</button></div>
+            <div id="dashStockAlerts"></div>
+          </article>
         </div>
       </section>
 
+      <!-- PRODUCTS -->
       <section class="page" id="products">
-        <h2>Products</h2><p class="subtitle">Manage products used in invoices.</p>
-        <div class="card">
-          <form id="productForm"><div class="formgrid">
-            <div><label>Product name</label><input id="productName" required></div>
-            <div><label>SKU</label><input id="productSku"></div>
-            <div><label>Price</label><input id="productPrice" type="number" min="0" step="0.01" required></div>
-            <div><label>Tax %</label><input id="productTax" type="number" min="0" step="0.01" value="18"></div>
-          </div><div class="actions" style="margin-top:14px"><button class="btn primary">Add Product</button></div></form>
-        </div>
-        <div class="card" style="margin-top:18px"><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Tax</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></div>
+        <div class="page-head"><div><h2>Products</h2><p class="muted">Build a clean product master for fast invoicing.</p></div><button class="btn primary" id="focusProductForm">＋ Add Product</button></div>
+        <article class="panel form-panel">
+          <div class="panel-head"><div><h3 id="productFormTitle">Add product</h3><p class="muted">Name, SKU, HSN/SAC, price, GST and opening stock.</p></div><button class="text-btn hidden" id="cancelProductEdit">Cancel edit</button></div>
+          <form id="productForm" class="form-grid">
+            <input type="hidden" id="productId">
+            <label>Product name<input id="productName" required placeholder="e.g. Premium Service"></label>
+            <label>SKU<input id="productSku" placeholder="e.g. SKU-001"></label>
+            <label>HSN / SAC<input id="productHsn" placeholder="e.g. 9983"></label>
+            <label>Selling price<input id="productPrice" type="number" min="0" step="0.01" required placeholder="0.00"></label>
+            <label>GST rate %<select id="productTax"><option>0</option><option>5</option><option>12</option><option selected>18</option><option>28</option></select></label>
+            <label>Opening stock<input id="productStock" type="number" min="0" step="1" value="0"></label>
+            <div class="form-actions full"><button class="btn primary" id="productSubmit">Save Product</button></div>
+          </form>
+        </article>
+        <article class="panel"><div class="toolbar"><div class="search"><span>⌕</span><input id="productSearch" placeholder="Search product, SKU or HSN"></div><span class="result-count" id="productCount">0 products</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Product</th><th>SKU</th><th>HSN/SAC</th><th>Price</th><th>GST</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="productRows"></tbody></table></div></article>
       </section>
 
+      <!-- CUSTOMERS -->
       <section class="page" id="customers">
-        <h2>Customers</h2><p class="subtitle">Store customer details for invoices.</p>
-        <div class="card">
-          <form id="customerForm"><div class="formgrid">
-            <div><label>Customer name</label><input id="customerName" required></div>
-            <div><label>Mobile</label><input id="customerMobile"></div>
-            <div><label>Email</label><input id="customerEmail" type="email"></div>
-            <div><label>GSTIN</label><input id="customerGstin"></div>
-            <div style="grid-column:1/-1"><label>Address</label><textarea id="customerAddress"></textarea></div>
-          </div><div class="actions" style="margin-top:14px"><button class="btn primary">Add Customer</button></div></form>
-        </div>
-        <div class="card" style="margin-top:18px"><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>GSTIN</th><th></th></tr></thead><tbody id="customerRows"></tbody></table></div></div>
+        <div class="page-head"><div><h2>Customers</h2><p class="muted">Keep billing, GST and contact information ready.</p></div></div>
+        <article class="panel form-panel">
+          <div class="panel-head"><div><h3 id="customerFormTitle">Add customer</h3><p class="muted">Customer details used automatically on invoices.</p></div><button class="text-btn hidden" id="cancelCustomerEdit">Cancel edit</button></div>
+          <form id="customerForm" class="form-grid">
+            <input type="hidden" id="customerId">
+            <label>Customer name<input id="customerName" required placeholder="Customer / company name"></label>
+            <label>Mobile<input id="customerMobile" inputmode="tel" placeholder="+91"></label>
+            <label>Email<input id="customerEmail" type="email" placeholder="name@example.com"></label>
+            <label>GSTIN<input id="customerGstin" maxlength="15" placeholder="15-character GSTIN"></label>
+            <label>State<input id="customerState" placeholder="Gujarat"></label>
+            <label>City<input id="customerCity" placeholder="Ahmedabad"></label>
+            <label class="full">Billing address<textarea id="customerAddress" placeholder="Complete billing address"></textarea></label>
+            <div class="form-actions full"><button class="btn primary" id="customerSubmit">Save Customer</button></div>
+          </form>
+        </article>
+        <article class="panel"><div class="toolbar"><div class="search"><span>⌕</span><input id="customerSearch" placeholder="Search customer, mobile or GSTIN"></div><span class="result-count" id="customerCount">0 customers</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Contact</th><th>GSTIN</th><th>State</th><th>Actions</th></tr></thead><tbody id="customerRows"></tbody></table></div></article>
       </section>
 
+      <!-- CREATE INVOICE -->
       <section class="page" id="create-invoice">
-        <h2>Create Invoice</h2><p class="subtitle">Build an invoice in one connected workflow.</p>
-        <div class="card noPrint">
-          <div class="formgrid">
-            <div><label>Customer</label><select id="invoiceCustomer"></select></div>
-            <div><label>Invoice date</label><input id="invoiceDate" type="date"></div>
-          </div>
-          <div style="margin-top:18px"><label>Product</label><select id="invoiceProduct"></select></div>
-          <div class="actions" style="margin-top:12px"><button class="btn" id="addLine">Add Product to Invoice</button></div>
-          <div class="tableWrap"><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Tax</th><th>Total</th><th></th></tr></thead><tbody id="invoiceLines"></tbody></table></div>
-          <div style="text-align:right;margin-top:16px"><strong>Grand Total: <span id="invoiceTotal">₹0.00</span></strong></div>
-          <div class="actions" style="margin-top:18px"><button class="btn primary" id="saveInvoice">Save Invoice</button><button class="btn" onclick="window.print()">Print / PDF</button></div>
-        </div>
-        <div class="invoice tally-invoice" id="invoicePreview">
-          <div class="tally-original">Original for Recipient</div>
-          <div class="tally-header">
-            <div class="tally-company">
-              <h1 id="previewCompanyName">SENQUARA ONES</h1>
-              <div id="previewCompanyAddress"></div>
-              <div id="previewCompanyGstin"></div>
-              <div id="previewCompanyContact"></div>
+        <div class="page-head"><div><h2>Create GST Invoice</h2><p class="muted">One clean workflow: customer → items → tax → preview → save → print/export.</p></div><span class="draft-pill" id="draftPill">DRAFT</span></div>
+        <div class="invoice-layout">
+          <article class="panel form-panel">
+            <div class="section-title">1. Invoice details</div>
+            <div class="form-grid compact">
+              <label>Invoice number<input id="invoiceNumber" readonly></label>
+              <label>Invoice date<input id="invoiceDate" type="date"></label>
+              <label>Customer<select id="invoiceCustomer"></select></label>
+              <label>Place of supply<input id="invoicePlace" placeholder="State"></label>
+              <label>Supply type<select id="invoiceSupply"><option value="intra">Intra-State (CGST + SGST)</option><option value="inter">Inter-State (IGST)</option></select></label>
+              <label>Reverse charge<select id="invoiceReverse"><option value="no">No</option><option value="yes">Yes</option></select></label>
             </div>
-            <div class="tally-title">
-              <div class="tax-invoice-title">TAX INVOICE</div>
-              <div><b>Invoice No.:</b> <span id="previewNumber">DRAFT</span></div>
-              <div><b>Date:</b> <span id="previewDate"></span></div>
+            <div class="section-title line-title">2. Add products</div>
+            <div class="add-line-bar">
+              <select id="invoiceProduct"></select>
+              <input id="invoiceQty" type="number" min="0.01" step="0.01" value="1" aria-label="Quantity">
+              <button class="btn primary" id="addLine">Add item</button>
             </div>
-          </div>
-          <div class="tally-parties">
-            <div><b>Buyer (Bill to)</b><br><strong id="previewCustomer">Select customer</strong><div id="previewCustomerAddress"></div><div id="previewCustomerGstin"></div></div>
-            <div><b>Place of Supply</b><br><span id="previewPlace">—</span><br><b>Terms of Payment</b><br><span id="previewPaymentTerms">—</span></div>
-          </div>
-          <table class="tally-items">
-            <thead><tr><th class="num">Sl</th><th>Description of Goods / Services</th><th>HSN/SAC</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">GST %</th><th class="num">Amount</th></tr></thead>
-            <tbody id="previewLines"></tbody>
-            <tfoot><tr><td colspan="6" class="right"><b>Taxable Value</b></td><td class="right" id="previewTaxable">₹0.00</td></tr><tr><td colspan="6" class="right"><b>CGST</b></td><td class="right" id="previewCgst">₹0.00</td></tr><tr><td colspan="6" class="right"><b>SGST</b></td><td class="right" id="previewSgst">₹0.00</td></tr><tr class="grand-row"><td colspan="6" class="right"><b>Grand Total</b></td><td class="right" id="previewTotal">₹0.00</td></tr></tfoot>
-          </table>
-          <div class="tally-bottom">
-            <div><b>Amount in Words</b><br><span id="previewWords">Rupees Zero Only</span><br><br><b>Declaration</b><br>We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct.</div>
-            <div class="signature"><b>For <span id="previewSignCompany">SENQUARA ONES</span></b><br><br><br>Authorised Signatory</div>
-          </div>
+            <div class="table-wrap invoice-lines-wrap"><table class="data-table invoice-lines"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>GST</th><th>Taxable</th><th>Total</th><th></th></tr></thead><tbody id="invoiceLines"></tbody></table></div>
+            <div class="invoice-summary">
+              <div class="summary-note"><b>Invoice note</b><textarea id="invoiceNote" placeholder="Optional note / payment terms"></textarea></div>
+              <div class="totals-box"><div><span>Taxable value</span><b id="invTaxable">₹0.00</b></div><div><span>CGST</span><b id="invCgst">₹0.00</b></div><div><span>SGST</span><b id="invSgst">₹0.00</b></div><div><span>IGST</span><b id="invIgst">₹0.00</b></div><div class="grand"><span>Grand total</span><strong id="invGrand">₹0.00</strong></div></div>
+            </div>
+            <div class="form-actions"><button class="btn primary" id="saveInvoice">Save Invoice</button><button class="btn" id="clearInvoice">Clear draft</button></div>
+            <div class="message" id="invoiceMessage"></div>
+          </article>
+          <article class="invoice-preview-wrap">
+            <div class="preview-toolbar"><b>Live preview</b><span class="muted">A4 GST format</span><button class="btn small" id="previewPrint">Print / PDF</button></div>
+            <div class="invoice-paper" id="invoicePreview"></div>
+          </article>
         </div>
       </section>
 
+      <!-- INVOICES -->
       <section class="page" id="invoices">
-        <h2>Invoices</h2><p class="subtitle">Saved invoices.</p>
-        <div class="card"><div class="tableWrap"><table class="table"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Total</th></tr></thead><tbody id="invoiceRows"></tbody></table></div></div>
+        <div class="page-head"><div><h2>Invoices</h2><p class="muted">Open any invoice number for the complete GST document and export options.</p></div><button class="btn primary" data-page="create-invoice">＋ New Invoice</button></div>
+        <article class="panel"><div class="toolbar"><div class="search"><span>⌕</span><input id="invoiceSearch" placeholder="Search invoice number or customer"></div><div class="toolbar-actions"><button class="btn small" id="printSelected">Print selected</button><button class="btn small" id="pdfSelected">PDF selected</button><button class="btn small" id="wordSelected">Word selected</button><button class="btn small" id="excelSelected">Excel selected</button></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th><input type="checkbox" id="selectAllInvoices"></th><th>Invoice</th><th>Date</th><th>Customer</th><th>Taxable</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="invoiceRows"></tbody></table></div></article>
       </section>
 
-      <section class="page" id="finance"><h2>Payments &amp; Finance</h2><p class="subtitle">Track payment status and finance records.</p><div class="card"><p class="muted">Finance workspace ready for payment entries and reconciliation.</p></div></section>
-      <section class="page" id="reports"><h2>Reports</h2><p class="subtitle">Business and invoice reporting.</p><div class="card"><p class="muted">Reports workspace ready.</p></div></section>
-      <section class="page" id="tax"><h2>Tax &amp; Invoice</h2><p class="subtitle">Tax configuration for invoices.</p><div class="card"><div class="formgrid"><div><label>Default tax rate %</label><input id="defaultTax" type="number" value="18"></div><div><label>Currency</label><select id="currency"><option>INR (₹)</option><option>USD ($)</option></select></div></div></div></section>
-      <section class="page" id="inventory"><h2>Inventory</h2><p class="subtitle">Stock overview.</p><div class="card"><p class="muted">Inventory workspace ready.</p></div></section>
-      <section class="page" id="ip-base"><h2>IP Base Model</h2><p class="subtitle">Platform foundation and connected modules.</p><div class="card"><p class="muted">IP Base Model workspace ready.</p></div></section>
-      <section class="page" id="settings"><h2>Settings</h2><p class="subtitle">Business and application settings.</p><div class="card"><div class="formgrid"><div><label>Business name</label><input id="businessName" value="SENQUARA ONES"></div><div><label>Country</label><input id="country" value="India"></div></div></div></section>
+      <!-- INVENTORY -->
+      <section class="page" id="inventory">
+        <div class="page-head"><div><h2>Inventory</h2><p class="muted">Track stock and quickly spot low inventory.</p></div><button class="btn" data-page="products">Manage products</button></div>
+        <div class="stat-grid inventory-stats">
+          <article class="stat-card accent-orange"><div class="stat-icon">◫</div><div><span>Total units</span><strong id="invStockUnits">0</strong></div></article>
+          <article class="stat-card accent-red"><div class="stat-icon">!</div><div><span>Low stock</span><strong id="invLowStock">0</strong></div></article>
+          <article class="stat-card accent-green"><div class="stat-icon">✓</div><div><span>In stock</span><strong id="invInStock">0</strong></div></article>
+          <article class="stat-card accent-blue"><div class="stat-icon">Ø</div><div><span>Out of stock</span><strong id="invOutStock">0</strong></div></article>
+        </div>
+        <article class="panel"><div class="toolbar"><div class="search"><span>⌕</span><input id="inventorySearch" placeholder="Search inventory"></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Product</th><th>SKU</th><th>Current stock</th><th>Alert level</th><th>Action</th></tr></thead><tbody id="inventoryRows"></tbody></table></div></article>
+      </section>
+
+      <!-- FINANCE -->
+      <section class="page" id="finance">
+        <div class="page-head"><div><h2>Payments & Finance</h2><p class="muted">Keep invoice totals and payment status visible.</p></div></div>
+        <div class="stat-grid"><article class="stat-card accent-blue"><div class="stat-icon">₹</div><div><span>Invoice value</span><strong id="financeTotal">₹0.00</strong></div></article><article class="stat-card accent-green"><div class="stat-icon">✓</div><div><span>Paid</span><strong id="financePaid">₹0.00</strong></div></article><article class="stat-card accent-orange"><div class="stat-icon">◷</div><div><span>Pending</span><strong id="financePending">₹0.00</strong></div></article></div>
+        <article class="panel"><div class="panel-head"><div><h3>Payment status</h3><p class="muted">Update status from the invoice list.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Invoice</th><th>Customer</th><th>Total</th><th>Status</th><th>Update</th></tr></thead><tbody id="financeRows"></tbody></table></div></article>
+      </section>
+
+      <!-- REPORTS -->
+      <section class="page" id="reports">
+        <div class="page-head"><div><h2>Reports</h2><p class="muted">Simple operational reports generated from your saved workspace data.</p></div><button class="btn" id="exportReport">Export report</button></div>
+        <div class="dashboard-grid"><article class="panel"><div class="panel-head"><div><h3>Sales by month</h3></div></div><div class="chart large" id="reportChart"></div></article><article class="panel"><div class="panel-head"><div><h3>GST summary</h3></div></div><div id="gstReport"></div></article></div>
+      </section>
+
+      <!-- TAX -->
+      <section class="page" id="tax">
+        <div class="page-head"><div><h2>Tax & Invoice</h2><p class="muted">Set the business information printed on GST invoices.</p></div></div>
+        <article class="panel form-panel">
+          <form id="settingsForm" class="form-grid">
+            <label>Business / legal name<input id="businessName"></label>
+            <label>GSTIN<input id="businessGstin" maxlength="15"></label>
+            <label>Phone<input id="businessPhone"></label>
+            <label>Email<input id="businessEmail"></label>
+            <label>State<input id="businessState"></label>
+            <label>Default GST %<select id="defaultTax"><option>0</option><option>5</option><option>12</option><option selected>18</option><option>28</option></select></label>
+            <label class="full">Business address<textarea id="businessAddress"></textarea></label>
+            <div class="form-actions full"><button class="btn primary">Save invoice settings</button></div>
+          </form>
+        </article>
+      </section>
+
+      <!-- LIVE USERS -->
+      <section class="page" id="live-users">
+        <div class="page-head"><div><h2>Live Users & Locations</h2><p class="muted">Online count, approximate IP location and access controls. Location data is approximate.</p></div><button class="btn" id="refreshLive">↻ Refresh</button></div>
+        <div class="stat-grid">
+          <article class="stat-card accent-green"><div class="stat-icon"><span class="live-dot"></span></div><div><span>Online</span><strong id="liveOnline">0</strong></div></article>
+          <article class="stat-card accent-blue"><div class="stat-icon">○</div><div><span>Offline</span><strong id="liveOffline">0</strong></div></article>
+          <article class="stat-card accent-red"><div class="stat-icon">!</div><div><span>Problem</span><strong id="liveProblem">0</strong></div></article>
+          <article class="stat-card accent-pink"><div class="stat-icon">●</div><div><span>6+ months</span><strong id="livePink">0</strong></div></article>
+        </div>
+        <div class="live-layout"><article class="panel"><div class="panel-head"><h3>Map</h3><select id="liveFilter" class="compact-select"><option value="all">All users</option><option value="online">Online</option><option value="offline">Offline</option><option value="problem">Problem</option><option value="pink">6+ months</option></select></div><div id="liveMap" class="live-map"><div class="map-empty">Map will appear when location data is available.</div></div></article><article class="panel"><div class="panel-head"><h3>User list</h3></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Status</th><th>User</th><th>Location / IP</th><th>Last seen</th><th>Access</th></tr></thead><tbody id="liveRows"></tbody></table></div></article></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="page" id="settings">
+        <div class="page-head"><div><h2>Settings</h2><p class="muted">Workspace preferences and data maintenance.</p></div></div>
+        <article class="panel form-panel"><div class="panel-head"><div><h3>Business profile</h3><p class="muted">These values are shared with invoice printing.</p></div></div><form id="profileForm" class="form-grid"><label>Business name<input id="setBusinessName"></label><label>Country<input value="India" readonly></label><label>Currency<select id="currency"><option value="INR">INR — ₹</option><option value="USD">USD — $</option></select></label><label>Timezone<input value="Asia/Kolkata" readonly></label><label class="full">Address<textarea id="setAddress"></textarea></label><div class="form-actions full"><button class="btn primary">Save profile</button></div></form></article>
+        <article class="panel danger-zone"><div><h3>Data maintenance</h3><p class="muted">Export a backup before clearing workspace data.</p></div><div class="actions"><button class="btn" id="backupData">Download backup</button><button class="btn danger" id="clearData">Clear business data</button></div></article>
+      </section>
     </div>
   </main>
 </div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 
-<script>
-(function(){
-  const $=id=>document.getElementById(id);
-  const key='senquara_ones_data_v1';
-  let data=JSON.parse(localStorage.getItem(key)||'{"products":[],"customers":[],"invoices":[]}');
-  let lines=[];
-
-  function save(){localStorage.setItem(key,JSON.stringify(data));renderAll()}
-  function money(n){return '₹'+Number(n||0).toFixed(2)}
-  function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
-  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-
-  function showPage(id){
-    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
-    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
-    $('pageTitle').textContent=document.querySelector('.nav button[data-page="'+id+'"]')?.textContent||'Dashboard';
-    $('sidebar').classList.remove('open');$('overlay').classList.remove('show');
-    if(id==='create-invoice') renderInvoice();
-  }
-  document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>showPage(b.dataset.go));
-  $('menuBtn').onclick=()=>{$('sidebar').classList.add('open');$('overlay').classList.add('show')};
-  $('overlay').onclick=()=>{$('sidebar').classList.remove('open');$('overlay').classList.remove('show')};
-
-  $('productForm').onsubmit=e=>{
-    e.preventDefault();
-    data.products.push({id:Date.now(),name:$('productName').value.trim(),sku:$('productSku').value.trim(),price:+$('productPrice').value,tax:+$('productTax').value||0});
-    e.target.reset();$('productTax').value=$('defaultTax').value||18;save();toast('Product added');
-  };
-  $('customerForm').onsubmit=e=>{
-    e.preventDefault();
-    data.customers.push({id:Date.now(),name:$('customerName').value.trim(),mobile:$('customerMobile').value.trim(),email:$('customerEmail').value.trim(),gstin:$('customerGstin').value.trim(),address:$('customerAddress').value.trim()});
-    e.target.reset();save();toast('Customer added');
-  };
-  $('addLine').onclick=()=>{
-    const p=data.products.find(x=>x.id==$('invoiceProduct').value);if(!p){toast('Add a product first');return}
-    lines.push({id:Date.now(),productId:p.id,name:p.name,qty:1,rate:p.price,tax:p.tax});renderInvoice();toast('Product added to invoice');
-  };
-  $('saveInvoice').onclick=()=>{
-    if(!lines.length){toast('Add at least one product');return}
-    const c=data.customers.find(x=>x.id==$('invoiceCustomer').value);
-    if(!c){toast('Select a customer');return}
-    const total=lines.reduce((s,l)=>s+l.qty*l.rate*(1+l.tax/100),0);
-    data.invoices.push({id:Date.now(),number:'INV-'+String(data.invoices.length+1).padStart(4,'0'),date:$('invoiceDate').value,customer:c.name,customerAddress:c.address||'',customerGstin:c.gstin||'',placeOfSupply:c.state||'',lines:[...lines],taxable:lines.reduce((s,l)=>s+l.qty*l.rate,0),cgst:lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100)/2,0),sgst:lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100)/2,0),total});
-    save();lines=[];renderInvoice();toast('Invoice saved');
-  };
-
-  function renderAll(){
-    $('statProducts').textContent=data.products.length;$('statCustomers').textContent=data.customers.length;$('statInvoices').textContent=data.invoices.length;
-    $('statOutstanding').textContent=money(data.invoices.reduce((s,i)=>s+i.total,0));
-    $('productRows').innerHTML=data.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.sku)}</td><td>${money(p.price)}</td><td>${p.tax}%</td><td><button class="btn danger" onclick="removeProduct(${p.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No products yet.</td></tr>';
-    $('customerRows').innerHTML=data.customers.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.mobile)}</td><td>${esc(c.email)}</td><td>${esc(c.gstin)}</td><td><button class="btn danger" onclick="removeCustomer(${c.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No customers yet.</td></tr>';
-    $('invoiceRows').innerHTML=data.invoices.map(i=>`<tr><td>${esc(i.number)}</td><td>${esc(i.date)}</td><td>${esc(i.customer)}</td><td>${money(i.total)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">No invoices yet.</td></tr>';
-    $('invoiceCustomer').innerHTML='<option value="">Select customer</option>'+data.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    $('invoiceProduct').innerHTML='<option value="">Select product</option>'+data.products.map(p=>`<option value="${p.id}">${esc(p.name)} — ${money(p.price)}</option>`).join('');
-  }
-  window.removeProduct=id=>{data.products=data.products.filter(x=>x.id!==id);save()};
-  window.removeCustomer=id=>{data.customers=data.customers.filter(x=>x.id!==id);save()};
-
-  function renderInvoice(){
-    if(!$('invoiceDate').value)$('invoiceDate').value=new Date().toISOString().slice(0,10);
-    const company=$('businessName')?.value?.trim()||'SENQUARA ONES';
-    const c=data.customers.find(x=>x.id===$('invoiceCustomer').value)||{};
-    const taxable=lines.reduce((s,l)=>s+l.qty*l.rate,0);
-    const tax=lines.reduce((s,l)=>s+l.qty*l.rate*(l.tax/100),0);
-    const cgst=tax/2, sgst=tax/2, grand=taxable+tax;
-    $('invoiceLines').innerHTML=lines.map((l,i)=>{
-      const subtotal=l.qty*l.rate, total=subtotal*(1+l.tax/100);
-      return `<tr><td>${esc(l.name)}</td><td><input style="width:85px" type="number" min="1" value="${l.qty}" onchange="setQty(${i},this.value)"></td><td>${money(l.rate)}</td><td>${l.tax}%</td><td>${money(total)}</td><td><button class="btn danger" onclick="removeLine(${i})">×</button></td></tr>`
-    }).join('')||'<tr><td colspan="6" class="muted">No products added.</td></tr>';
-    $('invoiceTotal').textContent=money(grand);
-    $('previewTotal').textContent=money(grand);
-    $('previewTaxable').textContent=money(taxable);
-    $('previewCgst').textContent=money(cgst);
-    $('previewSgst').textContent=money(sgst);
-    $('previewCustomer').textContent=c.name||'Cash Sale / Walk-in';
-    $('previewCustomerAddress').textContent=c.address||'';
-    $('previewCustomerGstin').textContent=c.gstin?'GSTIN: '+c.gstin:'';
-    $('previewDate').textContent=$('invoiceDate').value||'';
-    $('previewNumber').textContent='DRAFT';
-    $('previewCompanyName').textContent=company;
-    $('previewSignCompany').textContent=company;
-    $('previewCompanyAddress').textContent=$('country')?.value ? $('country').value : 'India';
-    $('previewCompanyGstin').textContent='';
-    $('previewCompanyContact').textContent='';
-    $('previewPlace').textContent=c.state||'—';
-    $('previewPaymentTerms').textContent='—';
-    $('previewWords').textContent='Rupees '+(grand?grand.toFixed(2):'Zero')+' Only';
-    $('previewLines').innerHTML=lines.map((l,i)=>{
-      const p=data.products.find(x=>x.id===l.productId)||{};
-      const base=l.qty*l.rate;
-      return `<tr><td class="num">${i+1}</td><td>${esc(l.name)}</td><td>${esc(p.hsn||p.hsnSac||'')}</td><td class="num">${l.qty}</td><td class="num">${money(l.rate)}</td><td class="num">${Number(l.tax||0)}%</td><td class="num">${money(base)}</td></tr>`;
-    }).join('')||'<tr><td class="num">1</td><td>Goods / Services</td><td></td><td class="num">1</td><td class="num">₹0.00</td><td class="num">0%</td><td class="num">₹0.00</td></tr>';
-  }
-  window.setQty=(i,v)=>{lines[i].qty=Math.max(1,+v||1);renderInvoice()};
-  window.removeLine=i=>{lines.splice(i,1);renderInvoice()};
-  $('invoiceCustomer').onchange=renderInvoice;$('invoiceDate').onchange=renderInvoice;
-  renderAll();renderInvoice();
-})();
-</script>
+<script src="js/dashboard-v2.js"></script>
 </body>
 </html>
