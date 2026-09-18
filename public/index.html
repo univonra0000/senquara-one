@@ -1,691 +1,247 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#10152f">
-<title>SENQUARA ONE</title>
-<style>
-:root{--bg:#080b18;--panel:#111733;--panel2:#171d42;--text:#f6f7ff;--muted:#aeb6d5;--accent:#8b7cff;--accent2:#36d7c4;--danger:#ff6685;--border:#29305a}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(135deg,#070916,#101637);color:var(--text)}
-button,input{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:flex}.side{width:250px;background:#0b0f25;border-right:1px solid var(--border);padding:22px;position:fixed;inset:0 auto 0 0}.brand{font-weight:900;font-size:23px;letter-spacing:2px}.tag{color:var(--muted);font-size:11px;margin:5px 0 28px}.nav button{width:100%;padding:12px;margin:4px 0;border:0;border-radius:12px;background:transparent;color:var(--muted);text-align:left}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.main{margin-left:250px;width:calc(100% - 250px);padding:24px;max-width:1500px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:22px}.status{font-size:12px;padding:8px 12px;border-radius:99px;background:#173a35;color:#7ff2df}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:rgba(17,23,51,.92);border:1px solid var(--border);border-radius:18px;padding:18px}.label{font-size:12px;color:var(--muted)}.value{font-size:28px;font-weight:800;margin-top:8px}.section{margin-top:18px}.two{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.bar{height:12px;background:#252b50;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px}.btn{border:0;border-radius:12px;padding:11px 15px;background:var(--accent);color:#fff;font-weight:700}.btn.alt{background:var(--panel2)}.btn.danger{background:var(--danger)}.form{display:grid;gap:10px}.form input{background:#0c1026;color:white;border:1px solid var(--border);padding:12px;border-radius:10px}.hidden{display:none}.login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(440px,100%);background:rgba(17,23,51,.96);padding:28px;border:1px solid var(--border);border-radius:24px}.loginbox h1{margin:0}.muted{color:var(--muted)}.toast{position:fixed;right:18px;bottom:18px;background:#182044;border:1px solid var(--border);padding:13px 16px;border-radius:12px;display:none}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#242b54;color:#cbd1ed;font-size:11px}
-@media(max-width:850px){.side{width:72px;padding:15px 9px}.brand{font-size:0;text-align:center}.brand:after{content:"S";font-size:24px}.tag{display:none}.nav button{font-size:0;text-align:center}.nav button:first-letter{font-size:20px}.main{margin-left:72px;width:calc(100% - 72px);padding:15px}.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.top h2{font-size:20px}}
-@media(max-width:520px){.grid{grid-template-columns:1fr 1fr}.card{padding:13px}.value{font-size:21px}.top{align-items:flex-start}.top .btn{padding:9px}}
-</style>
-
-<style id="senquara-v3-css">
-/* V3: preserve Master Panel colours; only add light shadows and mobile navigation */
-:root{
-  --sq-shadow:0 5px 0 rgba(185,65,54,.14),0 10px 22px rgba(35,25,20,.10);
-  --sq-shadow-focus:0 0 0 3px rgba(139,124,255,.18),0 5px 0 rgba(185,65,54,.12);
-}
-.btn,.s2btn,.s6 button,.s4-actions button,.sq-menu-item{
-  box-shadow:var(--sq-shadow);
-  transition:transform .12s ease,box-shadow .12s ease;
-}
-.btn:active,.s2btn:active,.s6 button:active,.s4-actions button:active,.sq-menu-item:active{
-  transform:translateY(3px);
-  box-shadow:0 2px 0 rgba(185,65,54,.12),0 5px 12px rgba(35,25,20,.08);
-}
-input,select,textarea{
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.08),0 3px 0 rgba(185,65,54,.09);
-}
-input:focus,select:focus,textarea:focus{outline:none;box-shadow:var(--sq-shadow-focus)}
-.sq-mobilebar{display:none}
-.sq-drawer{display:none}
-.sq-scrim{display:none}
-.sq-bill{margin-top:18px}
-.sq-bill-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.sq-bill-items{display:grid;gap:10px;margin-top:12px}
-.sq-bill-item{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:12px}
-.sq-bill-item-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:9px;align-items:end}
-.sq-bill-total{margin-top:14px;padding:16px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.04)}
-.sq-bill-total div{display:flex;justify-content:space-between;padding:5px 0}
-.sq-bill-total .grand{font-size:22px;font-weight:900;border-top:1px solid var(--border);margin-top:8px;padding-top:12px}
-.sq-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
-.sq-menu-item{display:block;width:100%;border:0;border-radius:12px;padding:13px;margin:5px 0;background:transparent;color:var(--muted);text-align:left;font-weight:700}
-.sq-menu-item:hover,.sq-menu-item.active{background:var(--panel2);color:#fff}
-@media(max-width:850px){
-  .side{display:none!important}
-  .main{margin-left:0!important;width:100%!important;padding:15px!important}
-  .sq-mobilebar{display:flex;position:sticky;top:0;z-index:40;align-items:center;gap:10px;padding:10px 12px;margin:-15px -15px 18px;background:#0b0f25;border-bottom:1px solid var(--border);box-shadow:0 4px 0 rgba(185,65,54,.14),0 10px 20px rgba(0,0,0,.15)}
-  .sq-mobilebar button{border:0;background:transparent;color:#fff;font-size:30px;width:45px;height:45px}
-  .sq-mobilebrand{flex:1;color:#fff;font-weight:900}.sq-mobilebrand small{display:block;color:var(--muted);font-size:10px;font-weight:500}
-  .sq-drawer{display:block;position:fixed;z-index:100;left:0;top:0;bottom:0;width:min(330px,88vw);padding:16px;background:var(--panel);transform:translateX(-105%);transition:.22s;overflow:auto;box-shadow:18px 0 45px rgba(0,0,0,.35)}
-  .sq-drawer.open{transform:none}
-  .sq-drawer-head{display:flex;align-items:center;justify-content:space-between;color:var(--text);font-size:20px;margin-bottom:12px}
-  .sq-drawer-close{border:0;background:transparent;color:var(--text);font-size:30px}
-  .sq-scrim.show{display:block;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.5)}
-  .sq-bill-grid{grid-template-columns:1fr}
-  .sq-bill-item-grid{grid-template-columns:1fr 1fr}
-  .sq-bill-item-grid label:first-child{grid-column:1/-1}
-  .sq-bill-item-grid .sq-remove{grid-column:1/-1}
-}
-@media(max-width:520px){
-  .sq-bill-item-grid{grid-template-columns:1fr}
-  .sq-bill-item-grid label:first-child,.sq-bill-item-grid .sq-remove{grid-column:auto}
-  .grid{grid-template-columns:1fr 1fr!important}
-}
-</style>
-  
- <script src="js/print-tools.js?v=6"></script>
- <link rel="stylesheet" href="css/fix-v6.css?v=6">
-   
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b102d">
+  <title>SENQUARA ONES</title>
+  <style>
+    :root{
+      --bg:#080d26; --panel:#111936; --panel2:#171f48; --border:#2a3565;
+      --text:#f5f7ff; --muted:#aeb6d4; --primary:#8d78ff; --primary2:#765df5;
+      --success:#39d6b2; --danger:#ff718d; --shadow:0 14px 35px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{min-height:100vh;display:flex}
+    .sidebar{width:260px;background:#0c1230;border-right:1px solid var(--border);padding:22px 16px;position:fixed;inset:0 auto 0 0;z-index:30;overflow:auto}
+    .brand{padding:8px 10px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+    .brand h1{font-size:20px;letter-spacing:3px;margin:0 0 4px}
+    .brand p{margin:0;color:var(--muted);font-size:12px}
+    .nav{display:grid;gap:6px}
+    .nav button{width:100%;text-align:left;background:transparent;border:0;color:var(--muted);padding:12px 13px;border-radius:10px}
+    .nav button:hover,.nav button.active{background:var(--panel2);color:#fff}
+    .main{margin-left:260px;width:calc(100% - 260px);min-width:0}
+    .topbar{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(8,13,38,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
+    .menuBtn{display:none;background:transparent;border:0;color:#fff;font-size:30px}
+    .content{padding:28px;max-width:1400px;margin:auto}
+    .page{display:none}.page.active{display:block}
+    h2{margin:0 0 7px;font-size:28px}.subtitle{color:var(--muted);margin:0 0 24px}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+    .stat strong{display:block;font-size:27px;margin-top:8px}.muted{color:var(--muted)}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+    .btn{border:0;border-radius:10px;padding:11px 16px;color:#fff;background:var(--panel2)}
+    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary2))}
+    .btn.success{background:#167d69}.btn.danger{background:#8f2944}
+    .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    label{display:block;color:var(--muted);font-size:14px;margin-bottom:7px}
+    input,select,textarea{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--border);background:#080e28;color:#fff;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+    textarea{min-height:90px;resize:vertical}
+    .tableWrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:13px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}.table th{color:var(--muted);font-size:13px}
+    .invoice{max-width:900px;margin:auto;background:#fff;color:#111;border-radius:12px;padding:30px}
+    .invoice input,.invoice select,.invoice textarea{color:#111;background:#fff;border-color:#ddd}
+    .toast{position:fixed;right:20px;bottom:20px;background:#151e43;border:1px solid var(--border);padding:13px 16px;border-radius:10px;display:none;z-index:100}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:700px){
+      .sidebar{transform:translateX(-105%);transition:.22s;width:280px;box-shadow:var(--shadow)}
+      .sidebar.open{transform:translateX(0)}
+      .main{margin-left:0;width:100%}.topbar{padding:0 16px}.menuBtn{display:block}
+      .content{padding:18px 14px}.grid,.formgrid{grid-template-columns:1fr}
+      .topbar h3{font-size:16px}
+      .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}.overlay.show{display:block}
+    }
+    @media print{
+      .sidebar,.topbar,.noPrint{display:none!important}.main{margin:0;width:100%}.content{padding:0}.page{display:none!important}.page.active{display:block!important}.invoice{box-shadow:none}
+    }
+  </style>
 </head>
 <body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><h1>SENQUARA ONES</h1><p>One Platform. Everything Connected.</p></div>
+    <nav class="nav" id="nav">
+      <button class="active" data-page="dashboard">Dashboard</button>
+      <button data-page="products">Products</button>
+      <button data-page="customers">Customers</button>
+      <button data-page="create-invoice">Create Invoice</button>
+      <button data-page="invoices">Invoices</button>
+      <button data-page="finance">Payments &amp; Finance</button>
+      <button data-page="reports">Reports</button>
+      <button data-page="tax">Tax &amp; Invoice</button>
+      <button data-page="inventory">Inventory</button>
+      <button data-page="ip-base">IP Base Model</button>
+      <button data-page="settings">Settings</button>
+    </nav>
+  </aside>
+  <div class="overlay" id="overlay"></div>
 
-<div class="sq-mobilebar" id="sqMobileBar">
-  <button id="sqOpenMenu" aria-label="Menu">☰</button>
-  <div class="sq-mobilebrand">SENQUARA ONE<small>One Platform. Everything Connected.</small></div>
-  <span id="sqOnlineMini" class="status">● Offline-ready</span>
-</div>
-<div class="sq-scrim" id="sqScrim"></div>
-<aside class="sq-drawer" id="sqDrawer">
-  <div class="sq-drawer-head"><span>Menu</span><button class="sq-drawer-close" id="sqCloseMenu">×</button></div>
-  <button class="sq-menu-item active" data-sq="dashboard">🏠 Dashboard</button>
-  <button class="sq-menu-item" data-sq="business">💼 Business</button>
-  <button class="sq-menu-item" data-sq="bill">🧾 Bill Generator</button>
-  <button class="sq-menu-item" data-sq="people">👥 People & Partners</button>
-  <button class="sq-menu-item" data-sq="products">📦 Products</button>
-  <button class="sq-menu-item" data-sq="finance">💰 Finance</button>
-  <button class="sq-menu-item" data-sq="reports">📊 Reports</button>
-  <button class="sq-menu-item" data-sq="tax">🌐 Tax & Invoice</button>
-  <button class="sq-menu-item" data-sq="inventory">📦 Global Inventory</button>
-  <button class="sq-menu-item" data-sq="advanced">🛒 Purchase / Stock Control</button>
-  <button class="sq-menu-item" data-sq="ip">◉ IP Base Model</button>
-  <button class="sq-menu-item" data-sq="language">🌐 Language</button>
-  <button class="sq-menu-item" data-sq="settings">⚙️ Settings / Approval</button>
-</aside>
-<div style="position:fixed;right:10px;bottom:10px;z-index:999"><button onclick="showS4()">🌐 Tax & Invoice</button></div>
-<div id="login" class="login">
-  <div class="loginbox">
-    <div class="brand">SENQUARA ONE</div>
-    <p class="muted">One Platform. Everything Connected.</p>
-    <div class="form">
-      <input id="email" type="email" placeholder="Email address">
-      <input id="mobile" placeholder="Mobile number">
-      <input id="password" type="password" placeholder="Password">
-      <button class="btn" onclick="register()">Create / Continue</button>
-      <button class="btn alt" onclick="demo()">Open Demo</button>
+  <main class="main">
+    <header class="topbar">
+      <button class="menuBtn" id="menuBtn" aria-label="Open menu">☰</button>
+      <h3 id="pageTitle">Dashboard</h3>
+      <span class="muted" id="status">Online-ready</span>
+    </header>
+
+    <div class="content">
+      <section class="page active" id="dashboard">
+        <h2>Dashboard</h2><p class="subtitle">Your business at a glance.</p>
+        <div class="grid">
+          <div class="card stat"><span class="muted">Products</span><strong id="statProducts">0</strong></div>
+          <div class="card stat"><span class="muted">Customers</span><strong id="statCustomers">0</strong></div>
+          <div class="card stat"><span class="muted">Invoices</span><strong id="statInvoices">0</strong></div>
+          <div class="card stat"><span class="muted">Outstanding</span><strong id="statOutstanding">₹0.00</strong></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Quick workflow</h3>
+          <p class="muted">1. Add Product → 2. Add Customer → 3. Create Invoice → 4. Preview → 5. Save → 6. Print/PDF</p>
+          <div class="actions"><button class="btn primary" data-go="products">Add Product</button><button class="btn" data-go="customers">Add Customer</button><button class="btn" data-go="create-invoice">Create Invoice</button></div>
+        </div>
+      </section>
+
+      <section class="page" id="products">
+        <h2>Products</h2><p class="subtitle">Manage products used in invoices.</p>
+        <div class="card">
+          <form id="productForm"><div class="formgrid">
+            <div><label>Product name</label><input id="productName" required></div>
+            <div><label>SKU</label><input id="productSku"></div>
+            <div><label>Price</label><input id="productPrice" type="number" min="0" step="0.01" required></div>
+            <div><label>Tax %</label><input id="productTax" type="number" min="0" step="0.01" value="18"></div>
+          </div><div class="actions" style="margin-top:14px"><button class="btn primary">Add Product</button></div></form>
+        </div>
+        <div class="card" style="margin-top:18px"><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Tax</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="customers">
+        <h2>Customers</h2><p class="subtitle">Store customer details for invoices.</p>
+        <div class="card">
+          <form id="customerForm"><div class="formgrid">
+            <div><label>Customer name</label><input id="customerName" required></div>
+            <div><label>Mobile</label><input id="customerMobile"></div>
+            <div><label>Email</label><input id="customerEmail" type="email"></div>
+            <div><label>GSTIN</label><input id="customerGstin"></div>
+            <div style="grid-column:1/-1"><label>Address</label><textarea id="customerAddress"></textarea></div>
+          </div><div class="actions" style="margin-top:14px"><button class="btn primary">Add Customer</button></div></form>
+        </div>
+        <div class="card" style="margin-top:18px"><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>GSTIN</th><th></th></tr></thead><tbody id="customerRows"></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="create-invoice">
+        <h2>Create Invoice</h2><p class="subtitle">Build an invoice in one connected workflow.</p>
+        <div class="card noPrint">
+          <div class="formgrid">
+            <div><label>Customer</label><select id="invoiceCustomer"></select></div>
+            <div><label>Invoice date</label><input id="invoiceDate" type="date"></div>
+          </div>
+          <div style="margin-top:18px"><label>Product</label><select id="invoiceProduct"></select></div>
+          <div class="actions" style="margin-top:12px"><button class="btn" id="addLine">Add Product to Invoice</button></div>
+          <div class="tableWrap"><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Tax</th><th>Total</th><th></th></tr></thead><tbody id="invoiceLines"></tbody></table></div>
+          <div style="text-align:right;margin-top:16px"><strong>Grand Total: <span id="invoiceTotal">₹0.00</span></strong></div>
+          <div class="actions" style="margin-top:18px"><button class="btn primary" id="saveInvoice">Save Invoice</button><button class="btn" onclick="window.print()">Print / PDF</button></div>
+        </div>
+        <div class="invoice" id="invoicePreview">
+          <div style="display:flex;justify-content:space-between;gap:20px"><div><h1 style="margin:0">SENQUARA ONES</h1><p>One Platform. Everything Connected.</p></div><div><strong id="previewNumber">DRAFT</strong><br><span id="previewDate"></span></div></div>
+          <hr><p><strong>Bill To:</strong> <span id="previewCustomer">Select customer</span></p>
+          <table class="table" style="color:#111"><thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th>Tax</th><th>Total</th></tr></thead><tbody id="previewLines"></tbody></table>
+          <h2 style="text-align:right" id="previewTotal">₹0.00</h2>
+        </div>
+      </section>
+
+      <section class="page" id="invoices">
+        <h2>Invoices</h2><p class="subtitle">Saved invoices.</p>
+        <div class="card"><div class="tableWrap"><table class="table"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Total</th></tr></thead><tbody id="invoiceRows"></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="finance"><h2>Payments &amp; Finance</h2><p class="subtitle">Track payment status and finance records.</p><div class="card"><p class="muted">Finance workspace ready for payment entries and reconciliation.</p></div></section>
+      <section class="page" id="reports"><h2>Reports</h2><p class="subtitle">Business and invoice reporting.</p><div class="card"><p class="muted">Reports workspace ready.</p></div></section>
+      <section class="page" id="tax"><h2>Tax &amp; Invoice</h2><p class="subtitle">Tax configuration for invoices.</p><div class="card"><div class="formgrid"><div><label>Default tax rate %</label><input id="defaultTax" type="number" value="18"></div><div><label>Currency</label><select id="currency"><option>INR (₹)</option><option>USD ($)</option></select></div></div></div></section>
+      <section class="page" id="inventory"><h2>Inventory</h2><p class="subtitle">Stock overview.</p><div class="card"><p class="muted">Inventory workspace ready.</p></div></section>
+      <section class="page" id="ip-base"><h2>IP Base Model</h2><p class="subtitle">Platform foundation and connected modules.</p><div class="card"><p class="muted">IP Base Model workspace ready.</p></div></section>
+      <section class="page" id="settings"><h2>Settings</h2><p class="subtitle">Business and application settings.</p><div class="card"><div class="formgrid"><div><label>Business name</label><input id="businessName" value="SENQUARA ONES"></div><div><label>Country</label><input value="India"></div></div></div></section>
     </div>
-    <p class="muted" style="font-size:12px">Prototype: data is stored on this device. Secure cloud login/email verification will be connected in the production backend.</p>
-  </div>
+  </main>
 </div>
-
-<div id="app" class="app hidden">
-<aside class="side">
-  <div class="brand">SENQUARA ONE</div><div class="tag">UNIVERSAL BUSINESS PLATFORM</div>
-  <nav class="nav">
-    <button class="active" onclick="show('dashboard',this)">🏠 Dashboard</button>
-    <button onclick="show('business',this)">💼 Business</button>
-    <button onclick="show('people',this)">👥 People</button>
-    <button onclick="show('products',this)">📦 Products</button>
-    <button onclick="show('finance',this)">💰 Finance</button>
-    <button onclick="show('reports',this)">📊 Reports</button>
-    <button onclick="show('settings',this)">⚙️ Settings</button>
-  </nav>
-</aside>
-<main class="main">
-  <div class="top"><div><h2 id="title">Dashboard</h2><div class="muted">Welcome to SENQUARA ONE</div></div><div><span id="online" class="status">● Offline-ready</span> <button class="btn" onclick="sync()">Sync</button></div></div>
-
-  <section id="dashboard" class="page">
-    <div class="grid">
-      <div class="card"><div class="label">Sales</div><div class="value" id="sales">₹0</div></div>
-      <div class="card"><div class="label">Purchases</div><div class="value" id="purchases">₹0</div></div>
-      <div class="card"><div class="label">Customers</div><div class="value" id="customers">0</div></div>
-      <div class="card"><div class="label">Products</div><div class="value" id="products">0</div></div>
-    </div>
-    <div class="two section">
-      <div class="card"><h3>Sales Overview</h3><div id="bars"></div></div>
-      <div class="card"><h3>System</h3><p class="muted">Offline queue</p><div class="bar"><i id="queuebar" style="width:0%"></i></div><p id="queue" class="muted">0 pending changes</p><button class="btn alt" onclick="notify('Owner notification preview sent')">🔔 Test Owner Notification</button></div>
-    </div>
-  </section>
-
-  <section id="business" class="page hidden"><div class="card"><h3>Business Hub</h3><p class="muted">Create invoices, quotes, orders, receipts, returns and international transactions.</p><button class="btn" onclick="notify('New transaction started')">+ New Transaction</button></div></section>
-
-  <section id="people" class="page hidden"><div class="card"><h3>People & Partners</h3><p class="muted">Customers, dealers, retailers, distributors, resellers and suppliers.</p><div id="peopleList"></div></div></section>
-
-  <section id="products" class="page hidden"><div class="card"><h3>Products</h3><div class="form"><input id="pname" placeholder="Product name"><input id="price" type="number" placeholder="Selling price"><button class="btn" onclick="addProduct()">Add Product</button></div><div id="productList" style="margin-top:15px"></div></div></section>
-
-  <section id="finance" class="page hidden"><div class="card"><h3>Finance</h3><p class="muted">Payments, receivables, payables, tax and multi-currency architecture.</p></div></section>
-  <section id="reports" class="page hidden"><div class="card"><h3>Reports & Analytics</h3><p class="muted">Sales, purchases, tax, stock, profit and customer reports will be added next.</p></div></section>
-  <section id="settings" class="page hidden"><div class="card"><h3>Settings & Approval</h3><p class="muted">Owner approval, roles, audit trail, notifications, backup and cloud sync are reserved for the secure backend.</p><button class="btn danger" onclick="logout()">Log out</button></div></section>
-
-<section id="sqBillPage" class="page hidden sq-bill">
- <div class="card">
-  <h2>🧾 Bill Generator</h2>
-  <p class="muted">Mobile-ready invoice generator using the existing SENQUARA ONE product/customer data.</p>
-  <div class="sq-bill-grid">
-   <div><label>Invoice Number</label><input id="sqInvNo" readonly></div>
-   <div><label>Date</label><input id="sqInvDate" type="date"></div>
-   <div><label>Customer</label><select id="sqCustomer"></select></div>
-   <div><label>Place of Supply</label><input id="sqPlace" placeholder="State / Country"></div>
-   <div><label>Invoice Type</label><select id="sqInvType"><option>Domestic Invoice</option><option>International Invoice</option><option>Export Invoice</option><option>Proforma Invoice</option><option>Credit Note</option><option>Debit Note</option><option>Delivery Challan</option></select></div>
-   <div><label>Tax Type</label><select id="sqTaxType"><option value="intra">CGST + SGST</option><option value="inter">IGST</option><option value="none">No Tax</option></select></div>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
-   <h3 style="margin:0">Items</h3><button class="btn" type="button" id="sqAddItem">＋ Add Item</button>
-  </div>
-  <div id="sqItems" class="sq-bill-items"></div>
-  <div class="sq-bill-total">
-   <div><span>Taxable</span><b id="sqTaxable">₹0.00</b></div>
-   <div><span>CGST</span><b id="sqCGST">₹0.00</b></div>
-   <div><span>SGST</span><b id="sqSGST">₹0.00</b></div>
-   <div><span>IGST</span><b id="sqIGST">₹0.00</b></div>
-   <div class="grand"><span>Grand Total</span><b id="sqGrand">₹0.00</b></div>
-  </div>
-  <div class="sq-actions">
-   <button class="btn" id="sqPreview">Preview</button>
-   <button class="btn" id="sqSaveBill">💾 Save Bill</button>
-   <button class="btn" id="sqPrintBill">🖨 Print</button>
-  </div>
-  <p id="sqBillMsg" class="muted"></p>
- </div>
-</section>
-
-
-<section id="sqIPPage" class="page hidden">
- <div class="card">
-  <h2>◉ IP Base Model</h2>
-  <p class="muted">Device/connection information. Public IP is fetched only when requested.</p>
-  <div class="sq-bill-grid">
-   <div><label>Connection</label><input id="sqIPOnline" readonly></div>
-   <div><label>Platform</label><input id="sqIPPlatform" readonly></div>
-   <div><label>Browser</label><input id="sqIPBrowser" readonly></div>
-   <div><label>Public IP</label><input id="sqPublicIP" readonly value="Not loaded"></div>
-  </div>
-  <div class="sq-actions"><button class="btn" id="sqRefreshIP">↻ Refresh IP</button></div>
- </div>
-</section>
-
-
-<section id="sqLanguagePage" class="page hidden">
- <div class="card">
-  <h2>🌐 Language</h2>
-  <p class="muted">Language selector is kept in the application shell so it can be connected to the Master Panel language dictionary.</p>
-  <label>Application Language<select id="sqLanguage"><option value="en">English</option><option value="hi">हिन्दी</option><option value="gu">ગુજરાતી</option></select></label>
- </div>
-</section>
-
-</main>
-</div>
-<div id="toast" class="toast"></div>
-<script>
-const KEY='senquara_one_v1';
-let data=JSON.parse(localStorage.getItem(KEY)||'{"sales":0,"purchases":0,"customers":[],"products":[],"queue":[],"profile":null}');
-function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
-function notify(t){const x=document.getElementById('toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2600)}
-function register(){const e=email.value.trim(),m=mobile.value.trim(),p=password.value;if(!e||!m||!p)return notify('Enter email, mobile and password');data.profile={email:e,mobile:m};data.queue.push({type:'account',at:new Date().toISOString()});save();login.style.display='none';app.classList.remove('hidden');notify('Account saved on this device')}
-function demo(){data.profile={email:'demo@senquara.one',mobile:'0000000000'};save();login.style.display='none';app.classList.remove('hidden');notify('Demo mode opened')}
-function logout(){app.classList.add('hidden');login.style.display='grid'}
-function show(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('title').textContent=btn.textContent.replace(/^[^ ]+ /,'')}
-function addProduct(){const n=pname.value.trim(),pr=Number(price.value);if(!n||!pr)return notify('Enter product and price');data.products.push({name:n,price:pr});data.queue.push({type:'product',name:n,at:new Date().toISOString()});pname.value='';price.value='';save();notify('Product saved offline')}
-function sync(){if(!navigator.onLine)return notify('Still offline — changes remain safely queued');const n=data.queue.length;data.queue=[];save();notify(n?`Synced ${n} change(s)`: 'Everything is already synced')}
-function render(){sales.textContent='₹'+Number(data.sales).toLocaleString('en-IN');purchases.textContent='₹'+Number(data.purchases).toLocaleString('en-IN');customers.textContent=data.customers.length;products.textContent=data.products.length;queue.textContent=data.queue.length+' pending changes';queuebar.style.width=Math.min(100,data.queue.length*10)+'%';productList.innerHTML=data.products.map((p,i)=>`<div class="card" style="margin-top:8px;padding:12px">${i+1}. ${p.name} <span class="pill">₹${p.price.toLocaleString('en-IN')}</span></div>`).join('')||'<p class="muted">No products yet.</p>';peopleList.innerHTML=data.customers.map(c=>`<div class="pill">${c}</div>`).join('')||'<p class="muted">No customers yet.</p>';bars.innerHTML=[30,55,45,75,60,90,70].map((v,i)=>`<div style="margin:12px 0"><div class="label">Day ${i+1}</div><div class="bar"><i style="width:${v}%"></i></div></div>`).join('')}
-window.addEventListener('online',()=>{online.textContent='● Online';online.style.background='#173a35';notify('Internet detected — sync is ready')});window.addEventListener('offline',()=>{online.textContent='● Offline-ready';notify('Offline mode enabled')});
-render(); if(data.profile){login.style.display='none';app.classList.remove('hidden')}
-</script>
+<div class="toast" id="toast"></div>
 
 <script>
-/* SENQUARA ONE — Step 3: Sales & Invoice Engine */
 (function(){
-  const KEY3="senquara_sales_v1";
-  let sales=JSON.parse(localStorage.getItem(KEY3)||"[]");
-  const money=n=>new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
-  function save3(){localStorage.setItem(KEY3,JSON.stringify(sales)); render3();}
-  function addSale(){
-    const customer=prompt("Customer / Business name"); if(!customer)return;
-    const product=prompt("Product name"); if(!product)return;
-    const qty=Number(prompt("Quantity","1")||1);
-    const price=Number(prompt("Unit price","0")||0);
-    const tax=Number(prompt("Tax %","0")||0);
-    const discount=Number(prompt("Discount %","0")||0);
-    if(qty<=0||price<0||tax<0||discount<0)return alert("Enter valid numbers.");
-    const subtotal=qty*price, disc=subtotal*discount/100, taxable=subtotal-disc, taxAmt=taxable*tax/100;
-    const total=taxable+taxAmt;
-    const invoice="INV-"+new Date().getFullYear()+"-"+String(sales.length+1).padStart(5,"0");
-    sales.push({id:crypto.randomUUID(),invoice,customer,product,qty,price,tax,discount,subtotal,disc,taxAmt,total,date:new Date().toISOString()});
-    save3(); alert(invoice+" created • Total "+money(total));
+  const $=id=>document.getElementById(id);
+  const key='senquara_ones_data_v1';
+  let data=JSON.parse(localStorage.getItem(key)||'{"products":[],"customers":[],"invoices":[]}');
+  let lines=[];
+
+  function save(){localStorage.setItem(key,JSON.stringify(data));renderAll()}
+  function money(n){return '₹'+Number(n||0).toFixed(2)}
+  function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+  function showPage(id){
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+    $('pageTitle').textContent=document.querySelector('.nav button[data-page="'+id+'"]')?.textContent||'Dashboard';
+    $('sidebar').classList.remove('open');$('overlay').classList.remove('show');
+    if(id==='create-invoice') renderInvoice();
   }
-  function render3(){
-    const box=document.getElementById("s3list"); if(!box)return;
-    if(!sales.length){box.innerHTML='<p class="muted">No invoices yet.</p>';return;}
-    box.innerHTML=sales.slice().reverse().map(s=>`<div class="card" style="margin-top:8px;padding:12px">
-      <b>${s.invoice}</b> • ${s.customer}<br><span class="muted">${s.product} × ${s.qty} • Tax ${s.tax}% • Discount ${s.discount}%</span>
-      <div style="margin-top:5px;font-weight:800">${money(s.total)}</div></div>`).join("");
+  document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>showPage(b.dataset.go));
+  $('menuBtn').onclick=()=>{$('sidebar').classList.add('open');$('overlay').classList.add('show')};
+  $('overlay').onclick=()=>{$('sidebar').classList.remove('open');$('overlay').classList.remove('show')};
+
+  $('productForm').onsubmit=e=>{
+    e.preventDefault();
+    data.products.push({id:Date.now(),name:$('productName').value.trim(),sku:$('productSku').value.trim(),price:+$('productPrice').value,tax:+$('productTax').value||0});
+    e.target.reset();$('productTax').value=$('defaultTax').value||18;save();toast('Product added');
+  };
+  $('customerForm').onsubmit=e=>{
+    e.preventDefault();
+    data.customers.push({id:Date.now(),name:$('customerName').value.trim(),mobile:$('customerMobile').value.trim(),email:$('customerEmail').value.trim(),gstin:$('customerGstin').value.trim(),address:$('customerAddress').value.trim()});
+    e.target.reset();save();toast('Customer added');
+  };
+  $('addLine').onclick=()=>{
+    const p=data.products.find(x=>x.id==$('invoiceProduct').value);if(!p){toast('Add a product first');return}
+    lines.push({id:Date.now(),productId:p.id,name:p.name,qty:1,rate:p.price,tax:p.tax});renderInvoice();toast('Product added to invoice');
+  };
+  $('saveInvoice').onclick=()=>{
+    if(!lines.length){toast('Add at least one product');return}
+    const c=data.customers.find(x=>x.id==$('invoiceCustomer').value);
+    if(!c){toast('Select a customer');return}
+    const total=lines.reduce((s,l)=>s+l.qty*l.rate*(1+l.tax/100),0);
+    data.invoices.push({id:Date.now(),number:'INV-'+String(data.invoices.length+1).padStart(4,'0'),date:$('invoiceDate').value,customer:c.name,lines:[...lines],total});
+    save();lines=[];renderInvoice();toast('Invoice saved');
+  };
+
+  function renderAll(){
+    $('statProducts').textContent=data.products.length;$('statCustomers').textContent=data.customers.length;$('statInvoices').textContent=data.invoices.length;
+    $('statOutstanding').textContent=money(data.invoices.reduce((s,i)=>s+i.total,0));
+    $('productRows').innerHTML=data.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.sku)}</td><td>${money(p.price)}</td><td>${p.tax}%</td><td><button class="btn danger" onclick="removeProduct(${p.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No products yet.</td></tr>';
+    $('customerRows').innerHTML=data.customers.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.mobile)}</td><td>${esc(c.email)}</td><td>${esc(c.gstin)}</td><td><button class="btn danger" onclick="removeCustomer(${c.id})">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No customers yet.</td></tr>';
+    $('invoiceRows').innerHTML=data.invoices.map(i=>`<tr><td>${esc(i.number)}</td><td>${esc(i.date)}</td><td>${esc(i.customer)}</td><td>${money(i.total)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">No invoices yet.</td></tr>';
+    $('invoiceCustomer').innerHTML='<option value="">Select customer</option>'+data.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    $('invoiceProduct').innerHTML='<option value="">Select product</option>'+data.products.map(p=>`<option value="${p.id}">${esc(p.name)} — ${money(p.price)}</option>`).join('');
   }
-  function mount3(){
-    if(document.getElementById("step3Panel"))return;
-    const main=document.querySelector(".main"); if(!main)return;
-    const panel=document.createElement("section"); panel.id="step3Panel"; panel.className="s2panel";
-    panel.innerHTML=`<h3>Step 3 — Sales & Invoice Engine</h3>
-      <p class="muted">Create sales invoices with quantity, price, discount and tax calculations. Data is stored offline on this device.</p>
-      <button class="s2btn" id="newInvoice3">＋ New Invoice</button>
-      <button class="s2btn" id="export3">⇩ Export JSON</button>
-      <div id="s3list" style="margin-top:12px"></div>`;
-    main.appendChild(panel);
-    document.getElementById("newInvoice3").onclick=addSale;
-    document.getElementById("export3").onclick=()=>{
-      const blob=new Blob([JSON.stringify(sales,null,2)],{type:"application/json"});
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="senquara-invoices.json";a.click();
-    };
-    render3();
+  window.removeProduct=id=>{data.products=data.products.filter(x=>x.id!==id);save()};
+  window.removeCustomer=id=>{data.customers=data.customers.filter(x=>x.id!==id);save()};
+
+  function renderInvoice(){
+    if(!$('invoiceDate').value)$('invoiceDate').value=new Date().toISOString().slice(0,10);
+    $('invoiceLines').innerHTML=lines.map((l,i)=>{
+      const subtotal=l.qty*l.rate, total=subtotal*(1+l.tax/100);
+      return `<tr><td>${esc(l.name)}</td><td><input style="width:85px" type="number" min="1" value="${l.qty}" onchange="setQty(${i},this.value)"></td><td>${money(l.rate)}</td><td>${l.tax}%</td><td>${money(total)}</td><td><button class="btn danger" onclick="removeLine(${i})">×</button></td></tr>`
+    }).join('')||'<tr><td colspan="6" class="muted">No products added.</td></tr>';
+    const total=lines.reduce((s,l)=>s+l.qty*l.rate*(1+l.tax/100),0);
+    $('invoiceTotal').textContent=money(total);$('previewTotal').textContent=money(total);
+    const c=data.customers.find(x=>x.id===$('invoiceCustomer').value);$('previewCustomer').textContent=c?c.name:'Select customer';
+    $('previewDate').textContent=$('invoiceDate').value||'';
+    $('previewLines').innerHTML=lines.map(l=>`<tr><td>${esc(l.name)}</td><td>${l.qty}</td><td>${money(l.rate)}</td><td>${l.tax}%</td><td>${money(l.qty*l.rate*(1+l.tax/100))}</td></tr>`).join('');
   }
-  setTimeout(mount3,300);
+  window.setQty=(i,v)=>{lines[i].qty=Math.max(1,+v||1);renderInvoice()};
+  window.removeLine=i=>{lines.splice(i,1);renderInvoice()};
+  $('invoiceCustomer').onchange=renderInvoice;$('invoiceDate').onchange=renderInvoice;
+  renderAll();renderInvoice();
 })();
 </script>
-
-
-<div id="s4" class="s4" style="display:none">
-  <div class="s4-card">
-    <h2>🌐 Global Tax & Invoice Engine</h2>
-    <div class="s4-note">Step 4 adds country-aware tax modes, India GST splitting, international/export invoicing, currencies, invoice document types, and print-copy modes. Tax rules are configurable and should be validated for production compliance.</div>
-  </div>
-
-  <div class="s4-card">
-    <h3>1. Invoice & Tax Setup</h3>
-    <div class="s4-grid">
-      <div><label>Invoice type</label><select id="s4Type"><option>Domestic Invoice</option><option>International Invoice</option><option>Export Invoice</option><option>Proforma Invoice</option><option>Credit Note</option><option>Debit Note</option><option>Delivery Challan</option></select></div>
-      <div><label>Tax regime</label><select id="s4Regime" onchange="s4RegimeChanged()"><option value="GST">GST</option><option value="VAT">VAT</option><option value="Sales Tax">Sales Tax</option><option value="None">No Tax</option></select></div>
-      <div><label>Country</label><select id="s4Country" onchange="s4CountryChanged()"><option>India</option><option>United States</option><option>United Kingdom</option><option>United Arab Emirates</option><option>Australia</option><option>Canada</option><option>Singapore</option><option>Germany</option><option>Other</option></select></div>
-      <div><label>Customer country</label><select id="s4CustomerCountry"><option>India</option><option>United States</option><option>United Kingdom</option><option>United Arab Emirates</option><option>Australia</option><option>Canada</option><option>Singapore</option><option>Germany</option><option>Other</option></select></div>
-      <div><label>Currency</label><select id="s4Currency"><option value="INR">INR — Indian Rupee</option><option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — Pound Sterling</option><option value="AED">AED — UAE Dirham</option><option value="AUD">AUD — Australian Dollar</option><option value="CAD">CAD — Canadian Dollar</option><option value="SGD">SGD — Singapore Dollar</option><option value="JPY">JPY — Japanese Yen</option></select></div>
-      <div><label>Exchange rate to base currency</label><input id="s4Fx" type="number" step="0.000001" value="1"></div>
-      <div><label>Tax registration / GSTIN (optional)</label><input id="s4TaxId" placeholder="e.g. GSTIN / VAT ID"></div>
-      <div><label>Place of supply / state</label><input id="s4Place" placeholder="e.g. Gujarat"></div>
-    </div>
-  </div>
-
-  <div class="s4-card">
-    <h3>2. India GST Configuration</h3>
-    <div class="s4-grid">
-      <div><label>Transaction</label><select id="s4GstType"><option value="intra">Intra-state — CGST + SGST</option><option value="inter">Inter-state — IGST</option><option value="ut">UT — CGST + UTGST</option></select></div>
-      <div><label>Total GST rate %</label><input id="s4GstRate" type="number" step="0.01" value="18"></div>
-      <div><label>HSN / SAC</label><input id="s4Hsn" placeholder="HSN or SAC code"></div>
-      <div><label>Export / zero-rated treatment</label><select id="s4Export"><option value="normal">Normal tax treatment</option><option value="zero">Zero-rated / export configured</option></select></div>
-    </div>
-    <div class="s4-note">For India GST, the app splits the entered total GST rate into CGST+SGST (or CGST+UTGST) for intra-state/UT transactions, or IGST for inter-state transactions. Actual legal treatment depends on the transaction and current rules.</div>
-  </div>
-
-  <div class="s4-card">
-    <h3>3. Calculate Tax</h3>
-    <div class="s4-grid">
-      <div><label>Taxable value</label><input id="s4Taxable" type="number" step="0.01" value="1000" oninput="s4Calc()"></div>
-      <div><label>Discount</label><input id="s4Discount" type="number" step="0.01" value="0" oninput="s4Calc()"></div>
-      <div><label>Taxable after discount</label><input id="s4Net" readonly></div>
-      <div><label>Tax amount</label><input id="s4Tax" readonly></div>
-    </div>
-    <div class="taxbox" id="s4Breakdown">CGST ₹90.00 + SGST ₹90.00</div>
-    <div class="s4-total" id="s4Grand">Total: ₹1,180.00</div>
-  </div>
-
-  <div class="s4-card">
-    <h3>4. Document Copy</h3>
-    <div class="s4-actions">
-      <button onclick="s4Print('Original')">🖨 Original</button>
-      <button onclick="s4Print('Duplicate')">🖨 Duplicate</button>
-      <button onclick="s4Print('Triplicate')">🖨 Triplicate</button>
-      <button onclick="s4Save()">💾 Save Configuration</button>
-      <button onclick="s4Export()">⬇ Export JSON</button>
-    </div>
-    <div class="s4-note">Print labels are document-copy labels; use your jurisdiction's required document wording in production.</div>
-  </div>
-
-  <div class="s4-card print-area" id="s4PrintArea">
-    <h2 id="s4PrintTitle">SENQUARA ONE — Invoice Preview</h2>
-    <table class="s4-table">
-      <tr><th>Document</th><td id="pType">Domestic Invoice</td><th>Currency</th><td id="pCurrency">INR</td></tr>
-      <tr><th>Country</th><td id="pCountry">India</td><th>Tax regime</th><td id="pRegime">GST</td></tr>
-      <tr><th>HSN/SAC</th><td id="pHsn">—</td><th>Tax ID</th><td id="pTaxId">—</td></tr>
-    </table>
-    <br>
-    <table class="s4-table">
-      <tr><th>Taxable value</th><td id="pNet">₹1,000.00</td></tr>
-      <tr><th id="pTaxLabel">GST</th><td id="pTax">₹180.00</td></tr>
-      <tr><th>Total</th><td id="pTotal">₹1,180.00</td></tr>
-    </table>
-    <p class="s4-note">SENQUARA ONE • One Platform. Everything Connected.</p>
-  </div>
-</div>
-<script>
-(function(){
-  const key='senquara_s4_config';
-  window.s4Money=function(n){
-    const c=document.getElementById('s4Currency').value;
-    try{return new Intl.NumberFormat(undefined,{style:'currency',currency:c,maximumFractionDigits:2}).format(Number(n)||0)}
-    catch(e){return c+' '+(Number(n)||0).toFixed(2)}
-  };
-  window.s4Calc=function(){
-    const gross=Math.max(0,Number(document.getElementById('s4Taxable').value)||0);
-    const disc=Math.max(0,Number(document.getElementById('s4Discount').value)||0);
-    const net=Math.max(0,gross-disc);
-    let regime=document.getElementById('s4Regime').value;
-    let rate=Math.max(0,Number(document.getElementById('s4GstRate').value)||0);
-    const exp=document.getElementById('s4Export').value;
-    if(exp==='zero' || regime==='None') rate=0;
-    const tax=net*rate/100;
-    document.getElementById('s4Net').value=net.toFixed(2);
-    document.getElementById('s4Tax').value=tax.toFixed(2);
-    let b='';
-    if(regime==='GST'){
-      const t=document.getElementById('s4GstType').value;
-      if(t==='intra') b=`CGST ${s4Money(tax/2)} + SGST ${s4Money(tax/2)}`;
-      else if(t==='ut') b=`CGST ${s4Money(tax/2)} + UTGST ${s4Money(tax/2)}`;
-      else b=`IGST ${s4Money(tax)}`;
-    }else if(regime==='VAT') b=`VAT ${s4Money(tax)}`;
-    else if(regime==='Sales Tax') b=`Sales Tax ${s4Money(tax)}`;
-    else b='No tax applied';
-    document.getElementById('s4Breakdown').textContent=b;
-    document.getElementById('s4Grand').textContent='Total: '+s4Money(net+tax);
-    document.getElementById('pType').textContent=document.getElementById('s4Type').value;
-    document.getElementById('pCurrency').textContent=document.getElementById('s4Currency').value;
-    document.getElementById('pCountry').textContent=document.getElementById('s4Country').value;
-    document.getElementById('pRegime').textContent=regime;
-    document.getElementById('pHsn').textContent=document.getElementById('s4Hsn').value||'—';
-    document.getElementById('pTaxId').textContent=document.getElementById('s4TaxId').value||'—';
-    document.getElementById('pNet').textContent=s4Money(net);
-    document.getElementById('pTax').textContent=s4Money(tax);
-    document.getElementById('pTotal').textContent=s4Money(net+tax);
-    document.getElementById('pTaxLabel').textContent=regime==='GST'?'GST':regime;
-  };
-  window.s4RegimeChanged=function(){s4Calc()};
-  window.s4CountryChanged=function(){
-    const c=document.getElementById('s4Country').value;
-    const reg=document.getElementById('s4Regime');
-    if(c==='India') reg.value='GST';
-    else if(c==='United Kingdom'||c==='Australia'||c==='Germany'||c==='Singapore') reg.value='VAT';
-    else if(c==='United States'||c==='Canada') reg.value='Sales Tax';
-    s4Calc();
-  };
-  window.s4Save=function(){
-    const ids=['s4Type','s4Regime','s4Country','s4CustomerCountry','s4Currency','s4Fx','s4TaxId','s4Place','s4GstType','s4GstRate','s4Hsn','s4Export'];
-    const o={savedAt:new Date().toISOString()};
-    ids.forEach(id=>o[id]=document.getElementById(id).value);
-    localStorage.setItem(key,JSON.stringify(o));
-    alert('Step 4 configuration saved offline on this device.');
-  };
-  window.s4Load=function(){
-    try{
-      const o=JSON.parse(localStorage.getItem(key)||'null'); if(!o)return;
-      Object.keys(o).forEach(id=>{const e=document.getElementById(id);if(e)e.value=o[id]});
-    }catch(e){}
-    s4Calc();
-  };
-  window.s4Export=function(){
-    s4Save();
-    const blob=new Blob([localStorage.getItem(key)||'{}'],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='senquara-one-step4-tax-config.json';a.click();URL.revokeObjectURL(a.href);
-  };
-  window.s4Print=function(copy){
-    s4Calc(); document.getElementById('s4PrintTitle').textContent='SENQUARA ONE — '+copy+' Copy';
-    window.print();
-  };
-  window.showS4=function(){
-    document.querySelectorAll('body > div[id]').forEach(x=>{if(x.id!=='s4')x.style.display='none'});
-    document.getElementById('s4').style.display='block';s4Load();
-  };
-  document.addEventListener('DOMContentLoaded',s4Load);
-})();
-</script>
-
-
-<div id="s5" class="s4" style="display:none">
-<div class="s4-card"><h2>📦 Step 5 — Inventory + Global Compliance Master</h2>
-<div class="s4-note">Global HS classification is based on the World Customs Organization Harmonized System. National tariff codes, taxes, exemptions and duties remain country-specific and must be checked against the relevant official authority. WCO says HS is used by more than 200 countries/economies and final classification is under the national tariff schedule.</div></div>
-<div class="s4-card"><h3>🔎 HSN / HS Master</h3>
-<div class="s4-grid">
-<div><label>HS / HSN code</label><input id="s5hs" placeholder="e.g. 8517"></div>
-<div><label>Product description</label><input id="s5desc" placeholder="Description"></div>
-<div><label>Country tariff</label><select id="s5country"><option>India</option><option>United States</option><option>European Union</option><option>United Kingdom</option><option>UAE</option><option>Other</option></select></div>
-<div><label>Classification level</label><select id="s5level"><option>HS 6-digit</option><option>National tariff code</option><option>India HSN 8-digit</option><option>Service / SAC</option></select></div>
-</div>
-<div class="s4-actions"><button onclick="s5Lookup()">🔍 Check source</button><button onclick="s5Save()">💾 Save item</button></div>
-<div id="s5result" class="taxbox">WCO HS is the international base; use the national tariff database for final classification.</div>
-<div class="s4-note">India's GST Portal provides HSN/SAC search and an HSN directory download. CBIC publishes GST rates/classification and customs tariff resources.</div></div>
-<div class="s4-card"><h3>🌍 Country-wise Tax & Government Authority Registry</h3>
-<div class="s4-note">This is a configuration foundation, not legal advice. Rates, thresholds, exemptions and filing rules can change. The production platform should refresh tax data from official sources before legally sensitive calculations.</div>
-<input id="s5filter" placeholder="Search country, currency or tax model..." oninput="s5Filter()" style="width:100%;box-sizing:border-box;padding:10px;border-radius:9px;border:1px solid #bbb;margin:10px 0">
-<div style="overflow:auto;max-height:430px"><table class="s4-table" id="s5table"><thead><tr><th>Country</th><th>Code</th><th>Currency</th><th>Tax model</th><th>Official authority/source family</th></tr></thead><tbody><tr><td>India</td><td>IN</td><td>INR</td><td>GST</td><td>CBIC / GST Portal</td></tr><tr><td>United States</td><td>US</td><td>USD</td><td>Sales Tax</td><td>U.S. state tax authorities</td></tr><tr><td>Canada</td><td>CA</td><td>CAD</td><td>GST/HST/PST</td><td>Canada Revenue Agency / provinces</td></tr><tr><td>United Kingdom</td><td>GB</td><td>GBP</td><td>VAT</td><td>HM Revenue &amp; Customs</td></tr><tr><td>Australia</td><td>AU</td><td>AUD</td><td>GST</td><td>Australian Taxation Office</td></tr><tr><td>New Zealand</td><td>NZ</td><td>NZD</td><td>GST</td><td>Inland Revenue</td></tr><tr><td>UAE</td><td>AE</td><td>AED</td><td>VAT</td><td>Federal Tax Authority</td></tr><tr><td>Saudi Arabia</td><td>SA</td><td>SAR</td><td>VAT</td><td>ZATCA</td></tr><tr><td>Singapore</td><td>SG</td><td>SGD</td><td>GST</td><td>IRAS / Singapore Customs</td></tr><tr><td>Malaysia</td><td>MY</td><td>MYR</td><td>SST</td><td>Royal Malaysian Customs</td></tr><tr><td>Japan</td><td>JP</td><td>JPY</td><td>Consumption Tax</td><td>National Tax Agency / Customs</td></tr><tr><td>China</td><td>CN</td><td>CNY</td><td>VAT</td><td>State Taxation Administration / Customs</td></tr><tr><td>South Korea</td><td>KR</td><td>KRW</td><td>VAT</td><td>NTS / Korea Customs</td></tr><tr><td>Germany</td><td>DE</td><td>EUR</td><td>VAT</td><td>Federal Central Tax Office / Customs</td></tr><tr><td>France</td><td>FR</td><td>EUR</td><td>VAT</td><td>French Tax Administration / Customs</td></tr><tr><td>Italy</td><td>IT</td><td>EUR</td><td>VAT</td><td>Agenzia Entrate / Customs</td></tr><tr><td>Spain</td><td>ES</td><td>EUR</td><td>VAT</td><td>Agencia Tributaria / Customs</td></tr><tr><td>Netherlands</td><td>NL</td><td>EUR</td><td>VAT</td><td>Dutch Tax Administration / Customs</td></tr><tr><td>Switzerland</td><td>CH</td><td>CHF</td><td>VAT</td><td>Federal Tax Administration / Customs</td></tr><tr><td>Brazil</td><td>BR</td><td>BRL</td><td>ICMS/ISS + federal</td><td>Receita Federal / states</td></tr><tr><td>Mexico</td><td>MX</td><td>MXN</td><td>VAT</td><td>SAT / Customs</td></tr><tr><td>South Africa</td><td>ZA</td><td>ZAR</td><td>VAT</td><td>SARS</td></tr><tr><td>Turkey</td><td>TR</td><td>TRY</td><td>VAT</td><td>Revenue Administration / Customs</td></tr><tr><td>Indonesia</td><td>ID</td><td>IDR</td><td>VAT</td><td>Directorate General of Taxes / Customs</td></tr><tr><td>Thailand</td><td>TH</td><td>THB</td><td>VAT</td><td>Revenue Department / Customs</td></tr><tr><td>Vietnam</td><td>VN</td><td>VND</td><td>VAT</td><td>Tax Department / Customs</td></tr><tr><td>Philippines</td><td>PH</td><td>PHP</td><td>VAT</td><td>BIR / Customs</td></tr><tr><td>Bangladesh</td><td>BD</td><td>BDT</td><td>VAT</td><td>NBR</td></tr><tr><td>Pakistan</td><td>PK</td><td>PKR</td><td>Sales Tax</td><td>FBR</td></tr><tr><td>Sri Lanka</td><td>LK</td><td>LKR</td><td>VAT</td><td>Inland Revenue / Customs</td></tr><tr><td>Ireland</td><td>IE</td><td>EUR</td><td>VAT</td><td>Revenue Commissioners</td></tr><tr><td>Portugal</td><td>PT</td><td>EUR</td><td>VAT</td><td>Tax and Customs Authority</td></tr><tr><td>Sweden</td><td>SE</td><td>SEK</td><td>VAT</td><td>Swedish Tax Agency / Customs</td></tr><tr><td>Norway</td><td>NO</td><td>NOK</td><td>VAT</td><td>Norwegian Tax Administration / Customs</td></tr><tr><td>Denmark</td><td>DK</td><td>DKK</td><td>VAT</td><td>Danish Tax Agency / Customs</td></tr><tr><td>Finland</td><td>FI</td><td>EUR</td><td>VAT</td><td>Finnish Tax Administration / Customs</td></tr><tr><td>Poland</td><td>PL</td><td>PLN</td><td>VAT</td><td>Ministry of Finance / Customs</td></tr><tr><td>Austria</td><td>AT</td><td>EUR</td><td>VAT</td><td>Federal Ministry of Finance / Customs</td></tr><tr><td>Belgium</td><td>BE</td><td>EUR</td><td>VAT</td><td>FPS Finance / Customs</td></tr><tr><td>Czechia</td><td>CZ</td><td>CZK</td><td>VAT</td><td>Financial Administration / Customs</td></tr><tr><td>Greece</td><td>GR</td><td>EUR</td><td>VAT</td><td>AADE / Customs</td></tr><tr><td>Israel</td><td>IL</td><td>ILS</td><td>VAT</td><td>Israel Tax Authority / Customs</td></tr><tr><td>Egypt</td><td>EG</td><td>EGP</td><td>VAT</td><td>Egyptian Tax Authority / Customs</td></tr><tr><td>Nigeria</td><td>NG</td><td>NGN</td><td>VAT</td><td>Nigeria Revenue Service / Customs</td></tr><tr><td>Kenya</td><td>KE</td><td>KES</td><td>VAT</td><td>Kenya Revenue Authority</td></tr><tr><td>Ghana</td><td>GH</td><td>GHS</td><td>VAT</td><td>Ghana Revenue Authority / Customs</td></tr><tr><td>Morocco</td><td>MA</td><td>MAD</td><td>VAT</td><td>Tax Administration / Customs</td></tr><tr><td>Chile</td><td>CL</td><td>CLP</td><td>VAT</td><td>SII / Customs</td></tr><tr><td>Argentina</td><td>AR</td><td>ARS</td><td>VAT</td><td>Tax authority / Customs</td></tr><tr><td>Colombia</td><td>CO</td><td>COP</td><td>VAT</td><td>DIAN / Customs</td></tr><tr><td>Peru</td><td>PE</td><td>PEN</td><td>VAT</td><td>SUNAT / Customs</td></tr><tr><td>Uruguay</td><td>UY</td><td>UYU</td><td>VAT</td><td>DGI / Customs</td></tr><tr><td>Iceland</td><td>IS</td><td>ISK</td><td>VAT</td><td>Tax authority / Customs</td></tr><tr><td>Luxembourg</td><td>LU</td><td>EUR</td><td>VAT</td><td>Tax Administration / Customs</td></tr><tr><td>Estonia</td><td>EE</td><td>EUR</td><td>VAT</td><td>Tax and Customs Board</td></tr><tr><td>Latvia</td><td>LV</td><td>EUR</td><td>VAT</td><td>State Revenue Service / Customs</td></tr><tr><td>Lithuania</td><td>LT</td><td>EUR</td><td>VAT</td><td>State Tax Inspectorate / Customs</td></tr><tr><td>Slovakia</td><td>SK</td><td>EUR</td><td>VAT</td><td>Financial Administration</td></tr><tr><td>Slovenia</td><td>SI</td><td>EUR</td><td>VAT</td><td>Financial Administration / Customs</td></tr><tr><td>Croatia</td><td>HR</td><td>EUR</td><td>VAT</td><td>Tax Administration / Customs</td></tr><tr><td>Romania</td><td>RO</td><td>RON</td><td>VAT</td><td>Tax Administration / Customs</td></tr><tr><td>Hungary</td><td>HU</td><td>HUF</td><td>VAT</td><td>National Tax and Customs Administration</td></tr><tr><td>Bulgaria</td><td>BG</td><td>EUR</td><td>VAT</td><td>National Revenue Agency / Customs</td></tr><tr><td>Cyprus</td><td>CY</td><td>EUR</td><td>VAT</td><td>Tax Department / Customs</td></tr><tr><td>Malta</td><td>MT</td><td>EUR</td><td>VAT</td><td>Commissioner for Revenue / Customs</td></tr><tr><td>Russia</td><td>RU</td><td>RUB</td><td>VAT</td><td>Federal Tax Service / Customs</td></tr><tr><td>Ukraine</td><td>UA</td><td>UAH</td><td>VAT</td><td>State Tax Service / Customs</td></tr><tr><td>Kazakhstan</td><td>KZ</td><td>KZT</td><td>VAT</td><td>State Revenue Committee</td></tr><tr><td>Qatar</td><td>QA</td><td>QAR</td><td>Tax regime varies</td><td>General Tax Authority / Customs</td></tr><tr><td>Kuwait</td><td>KW</td><td>KWD</td><td>Tax regime varies</td><td>Ministry of Finance / Customs</td></tr><tr><td>Bahrain</td><td>BH</td><td>BHD</td><td>VAT</td><td>National Bureau for Revenue</td></tr><tr><td>Oman</td><td>OM</td><td>OMR</td><td>VAT</td><td>Tax Authority / Customs</td></tr><tr><td>Jordan</td><td>JO</td><td>JOD</td><td>Sales Tax</td><td>Income &amp; Sales Tax Department / Customs</td></tr></tbody></table></div></div>
-<div class="s4-card"><h3>📦 Inventory Foundation</h3>
-<div class="s4-grid">
-<div><label>SKU / Item code</label><input id="s5sku" placeholder="SKU-001"></div>
-<div><label>Opening stock</label><input id="s5stock" type="number" value="0"></div>
-<div><label>Unit</label><select id="s5unit"><option>PCS</option><option>BOX</option><option>KG</option><option>GRAM</option><option>LITRE</option><option>METER</option><option>OTHER</option></select></div>
-<div><label>Warehouse</label><input id="s5warehouse" placeholder="Main Warehouse"></div>
-<div><label>Low-stock threshold</label><input id="s5low" type="number" value="5"></div>
-<div><label>HSN/SAC</label><input id="s5itemhsn" placeholder="HSN / SAC"></div>
-<div><label>Tax category</label><input id="s5taxcat" placeholder="GST/VAT category"></div>
-<div><label>Purchase price</label><input id="s5purchase" type="number" step="0.01" value="0"></div>
-</div><div class="s4-actions"><button onclick="s5Stock(1)">➕ Stock In</button><button onclick="s5Stock(-1)">➖ Stock Out</button><button onclick="s5Save()">💾 Save Item</button><button onclick="s5Export()">⬇ Export JSON</button></div>
-<div id="s5stockmsg" class="taxbox">Ready.</div></div>
-</div>
-<script>
-(function(){
-const k='senquara_step5_inventory';
-window.showS5=function(){document.querySelectorAll('body > div[id]').forEach(x=>{if(x.id!=='s5')x.style.display='none'});document.getElementById('s4').style.display='none';document.getElementById('s5').style.display='block';s5Load()};
-window.s5Filter=function(){const q=(document.getElementById('s5filter').value||'').toLowerCase();document.querySelectorAll('#s5table tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')};
-window.s5Lookup=function(){const h=document.getElementById('s5hs').value.trim(),c=document.getElementById('s5country').value;document.getElementById('s5result').textContent=h?'HS/HSN '+h+': final classification for '+c+' must be verified in its official national tariff database.':'Enter an HS/HSN code first.'};
-window.s5Load=function(){try{const a=JSON.parse(localStorage.getItem(k)||'[]');if(a.length){const x=a[a.length-1];['s5sku','s5stock','s5unit','s5warehouse','s5low','s5itemhsn','s5taxcat','s5purchase'].forEach(id=>{if(x[id]!=null)document.getElementById(id).value=x[id]})}}catch(e){}};
-window.s5Save=function(){let a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]')}catch(e){}const x={savedAt:new Date().toISOString()};['s5sku','s5stock','s5unit','s5warehouse','s5low','s5itemhsn','s5taxcat','s5purchase'].forEach(id=>x[id]=document.getElementById(id).value);a.push(x);localStorage.setItem(k,JSON.stringify(a));document.getElementById('s5stockmsg').textContent='Inventory item saved offline.'};
-window.s5Stock=function(d){const e=document.getElementById('s5stock'),n=Math.max(0,(Number(e.value)||0)+d);e.value=n;const low=Number(document.getElementById('s5low').value)||0;document.getElementById('s5stockmsg').textContent=(n<=low?'⚠️ Low-stock alert: ':'')+'Stock is now '+n+' '+document.getElementById('s5unit').value};
-window.s5Export=function(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([localStorage.getItem(k)||'[]'],{type:'application/json'}));a.download='senquara-one-inventory.json';a.click();URL.revokeObjectURL(a.href)};
-})();
-</script>
-
-
-<style>
-.s6{font-family:inherit}.s6-card{background:var(--card,#fff);border:1px solid #d9e1ea;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 4px 14px rgba(0,0,0,.04)}
-.s6-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.s6 label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}.s6 input,.s6 select,.s6 textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.s6 textarea{min-height:70px}.s6-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.s6 button{border:0;border-radius:9px;padding:10px 13px;cursor:pointer;font-weight:700}.s6 .primary{background:#111827;color:#fff}.s6 .good{background:#166534;color:#fff}.s6 .warn{background:#92400e;color:#fff}.s6 .danger{background:#991b1b;color:#fff}.s6 .muted{color:#64748b;font-size:13px}.s6 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.s6 .stat{padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}.s6 .stat b{font-size:22px;display:block;margin-top:5px}.s6 table{width:100%;border-collapse:collapse;font-size:13px}.s6 th,.s6 td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left}.s6 .scroll{overflow:auto}.s6 .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;font-size:11px;font-weight:700}.s6 .low{background:#fef2f2;color:#991b1b}.s6 .ok{background:#ecfdf5;color:#166534}.s6 .tabs{display:flex;gap:7px;overflow:auto;padding-bottom:5px}.s6 .tabs button{white-space:nowrap;background:#e2e8f0}.s6 .tabs button.active{background:#111827;color:#fff}.s6 .tabpane{display:none}.s6 .tabpane.active{display:block}.s6 .notice{padding:11px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;font-size:13px}.s6 .success{padding:11px;border-radius:10px;background:#ecfdf5;border:1px solid #a7f3d0;font-size:13px}.s6 .dangerbox{padding:11px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;font-size:13px}
-@media print{body>*:not(#s6){display:none!important}#s6{display:block!important}.s6 .no-print{display:none!important}}
-</style>
-<div id="s6" class="s6" style="display:none">
-<div class="s6-card"><h2>📦 Step 6 — Advanced Purchase & Inventory Control</h2><div class="notice"><b>SENQUARA ONE:</b> Purchase → Receive → Stock → Transfer → Sale → Return → Adjustment. Every movement is recorded with date, user/device placeholder, source document and audit ID. This offline module is sync-ready; secure multi-user authorization requires the future backend.</div></div>
-<div class="s6-card no-print"><div class="tabs">
-<button class="active" onclick="s6Tab('overview',this)">📊 Overview</button><button onclick="s6Tab('purchase',this)">🛒 Purchase</button><button onclick="s6Tab('receive',this)">📥 Receive</button><button onclick="s6Tab('stock',this)">📦 Stock</button><button onclick="s6Tab('transfer',this)">🔁 Transfer</button><button onclick="s6Tab('return',this)">↩ Returns</button><button onclick="s6Tab('batch',this)">🏷 Batch/Serial</button><button onclick="s6Tab('reports',this)">📈 Reports</button><button onclick="s6Tab('backup',this)">💾 Backup</button>
-</div></div>
-<div id="s6overview" class="tabpane active">
-<div class="s6-card"><div class="stats"><div class="stat">Products<b id="s6statProducts">0</b></div><div class="stat">Stock Units<b id="s6statUnits">0</b></div><div class="stat">Low Stock<b id="s6statLow">0</b></div><div class="stat">Purchase Orders<b id="s6statPO">0</b></div><div class="stat">Stock Value<b id="s6statValue">0</b></div><div class="stat">Pending Returns<b id="s6statReturns">0</b></div></div></div>
-<div class="s6-card"><h3>⚡ Quick Actions</h3><div class="s6-actions"><button class="primary" onclick="s6Tab('purchase');s6NewPO()">➕ New Purchase Order</button><button class="good" onclick="s6Tab('receive');s6Receive()">📥 Receive Stock</button><button onclick="s6Tab('stock')">📦 Stock Register</button><button class="warn" onclick="s6Adjust()">⚙ Stock Adjustment</button><button onclick="s6Export()">⬇ Export Data</button></div><p id="s6message" class="muted">Ready. Data is stored locally on this device.</p></div>
-<div class="s6-card"><h3>⚠️ Reorder / Low Stock</h3><div id="s6lowList" class="scroll"></div></div>
-</div>
-<div id="s6purchase" class="tabpane"><div class="s6-card"><h3>🛒 Purchase Order</h3><div class="s6-grid"><div><label>Supplier</label><input id="s6supplier" placeholder="Supplier name"></div><div><label>PO Number</label><input id="s6po" readonly></div><div><label>Order Date</label><input id="s6podate" type="date"></div><div><label>Expected Date</label><input id="s6expected" type="date"></div><div><label>Currency</label><select id="s6pocurrency"><option>INR</option><option>USD</option><option>EUR</option><option>GBP</option><option>AED</option><option>JPY</option></select></div><div><label>Warehouse</label><input id="s6powarehouse" placeholder="Main Warehouse"></div></div><hr><div class="s6-grid"><div><label>SKU / Product</label><input id="s6polineproduct" placeholder="SKU or product"></div><div><label>HSN/HS</label><input id="s6polinehsn"></div><div><label>Quantity</label><input id="s6polineqty" type="number" min="0" step="0.001" value="1"></div><div><label>Unit</label><select id="s6polineunit"><option>PCS</option><option>BOX</option><option>KG</option><option>LITRE</option><option>METER</option><option>OTHER</option></select></div><div><label>Unit Cost</label><input id="s6polinecost" type="number" min="0" step="0.01"></div><div><label>Tax %</label><input id="s6polinetax" type="number" min="0" step="0.01" value="0"></div></div><div class="s6-actions"><button onclick="s6AddPOLine()">➕ Add Line</button><button class="primary" onclick="s6SavePO()">💾 Save Purchase Order</button><button onclick="s6ClearPO()">Clear</button></div><div id="s6polines" class="scroll"></div></div><div class="s6-card"><h3>Purchase Orders</h3><div id="s6poList" class="scroll"></div></div></div>
-<div id="s6receive" class="tabpane"><div class="s6-card"><h3>📥 Goods Receipt / GRN</h3><div class="s6-grid"><div><label>PO Number (optional)</label><input id="s6grnpo"></div><div><label>GRN Number</label><input id="s6grn" readonly></div><div><label>Supplier</label><input id="s6grnsupplier"></div><div><label>Warehouse</label><input id="s6grnwarehouse" value="Main Warehouse"></div><div><label>Receipt Date</label><input id="s6grndate" type="date"></div></div><div class="s6-grid"><div><label>SKU / Product</label><input id="s6grnproduct"></div><div><label>Batch / Lot</label><input id="s6grnbatch"></div><div><label>Serial numbers</label><textarea id="s6grnserials" placeholder="One serial per line"></textarea></div><div><label>Quantity Received</label><input id="s6grnqty" type="number" min="0" step="0.001"></div><div><label>Unit Cost</label><input id="s6grncost" type="number" min="0" step="0.01"></div><div><label>Expiry Date</label><input id="s6grnexpiry" type="date"></div></div><div class="s6-actions"><button class="good" onclick="s6SaveGRN()">📥 Receive & Update Stock</button></div><div id="s6grnmsg" class="success">Receiving stock creates a stock movement and updates inventory.</div></div><div class="s6-card"><h3>Goods Receipts</h3><div id="s6grnList" class="scroll"></div></div></div>
-<div id="s6stock" class="tabpane"><div class="s6-card"><h3>📦 Product / Inventory Master</h3><div class="s6-grid"><div><label>SKU</label><input id="s6sku"></div><div><label>Product Name</label><input id="s6productname"></div><div><label>Category</label><input id="s6category"></div><div><label>HS Version</label><select id="s6hsversion"><option>HS 2022</option><option>HS 2028</option><option>National Tariff</option><option>India HSN/SAC</option></select></div><div><label>HS / HSN / SAC</label><input id="s6hsn"></div><div><label>Unit</label><select id="s6unit"><option>PCS</option><option>BOX</option><option>KG</option><option>GRAM</option><option>LITRE</option><option>METER</option><option>OTHER</option></select></div><div><label>Opening Stock</label><input id="s6opening" type="number" step="0.001" value="0"></div><div><label>Reorder Level</label><input id="s6reorder" type="number" step="0.001" value="5"></div><div><label>Purchase Cost</label><input id="s6cost" type="number" step="0.01" value="0"></div><div><label>Selling Price</label><input id="s6sell" type="number" step="0.01" value="0"></div><div><label>Tax Category</label><input id="s6taxcat2" placeholder="GST/VAT category"></div><div><label>Warehouse</label><input id="s6warehouse" value="Main Warehouse"></div></div><div class="s6-actions"><button class="primary" onclick="s6SaveProduct()">💾 Save Product</button><button onclick="s6NewProduct()">Clear</button></div></div><div class="s6-card"><h3>Stock Register</h3><input class="no-print" id="s6stockSearch" placeholder="Search SKU, product, warehouse..." oninput="s6RenderStock()"><div id="s6stockList" class="scroll"></div></div><div class="s6-card"><h3>Stock Movement Ledger</h3><div id="s6movementList" class="scroll"></div></div></div>
-<div id="s6transfer" class="tabpane"><div class="s6-card"><h3>🔁 Warehouse Transfer</h3><div class="s6-grid"><div><label>SKU / Product</label><input id="s6trproduct"></div><div><label>From Warehouse</label><input id="s6trfrom"></div><div><label>To Warehouse</label><input id="s6trto"></div><div><label>Quantity</label><input id="s6trqty" type="number" min="0" step="0.001"></div><div><label>Transfer Date</label><input id="s6trdate" type="date"></div><div><label>Reference</label><input id="s6trref" placeholder="Transfer note"></div></div><div class="s6-actions"><button class="primary" onclick="s6Transfer()">🔁 Transfer Stock</button></div><div id="s6trmsg" class="success">Transfers create linked OUT and IN movements.</div></div></div>
-<div id="s6return" class="tabpane"><div class="s6-card"><h3>↩ Purchase Return / Supplier Return</h3><div class="s6-grid"><div><label>Supplier</label><input id="s6retsupplier"></div><div><label>SKU / Product</label><input id="s6retproduct"></div><div><label>Quantity</label><input id="s6retqty" type="number" min="0" step="0.001"></div><div><label>Warehouse</label><input id="s6retwarehouse" value="Main Warehouse"></div><div><label>Reason</label><input id="s6retreason"></div><div><label>Reference</label><input id="s6retref"></div></div><div class="s6-actions"><button class="warn" onclick="s6Return()">↩ Record Purchase Return</button></div></div><div class="s6-card"><h3>Returns</h3><div id="s6returnList" class="scroll"></div></div></div>
-<div id="s6batch" class="tabpane"><div class="s6-card"><h3>🏷 Batch / Lot / Serial Control</h3><div class="s6-grid"><div><label>SKU / Product</label><input id="s6bproduct"></div><div><label>Batch / Lot</label><input id="s6bbatch"></div><div><label>Serial Number</label><input id="s6bserial"></div><div><label>Manufacture Date</label><input id="s6bmfg" type="date"></div><div><label>Expiry Date</label><input id="s6bexp" type="date"></div><div><label>Quantity</label><input id="s6bqty" type="number" min="0" step="0.001"></div><div><label>Warehouse</label><input id="s6bwarehouse" value="Main Warehouse"></div><div><label>Status</label><select id="s6bstatus"><option>Available</option><option>Reserved</option><option>Damaged</option><option>Quarantined</option></select></div></div><div class="s6-actions"><button class="primary" onclick="s6SaveBatch()">💾 Save Batch / Serial</button></div></div><div class="s6-card"><h3>Batch & Serial Register</h3><div id="s6batchList" class="scroll"></div></div></div>
-<div id="s6reports" class="tabpane"><div class="s6-card"><h3>📈 Inventory Reports</h3><div class="s6-actions"><button onclick="s6Report('stock')">Stock Summary</button><button onclick="s6Report('valuation')">Inventory Valuation</button><button onclick="s6Report('movements')">Movement Ledger</button><button onclick="s6Report('low')">Low Stock</button><button onclick="s6Report('purchase')">Purchase Register</button></div><pre id="s6reportOut" style="white-space:pre-wrap;background:#f8fafc;padding:14px;border-radius:10px"></pre></div></div>
-<div id="s6backup" class="tabpane"><div class="s6-card"><h3>💾 Backup / Restore</h3><p class="muted">Export everything before moving devices. Import restores the local Step 6 dataset. Existing data is backed up automatically before import.</p><div class="s6-actions"><button class="primary" onclick="s6Export()">⬇ Export Full Step 6 JSON</button><button onclick="document.getElementById('s6importFile').click()">⬆ Import JSON</button><input id="s6importFile" type="file" accept="application/json" style="display:none" onchange="s6Import(this)"><button class="danger" onclick="s6ClearAll()">🗑 Clear Step 6 Data</button></div><div id="s6backupMsg" class="notice">Local-only prototype storage. Cloud backup/sync will be connected in the production backend.</div></div></div>
-</div>
-<script>
-(function(){
-const K='senquara_step6_v2';
-let db={products:[],pos:[],grns:[],movements:[],returns:[],batches:[],meta:{version:2}};
-const today=()=>new Date().toISOString().slice(0,10);
-const id=()=> (crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random());
-const val=x=>document.getElementById(x)?.value??'';
-const n=x=>Number(val(x))||0;
-function load(){try{const x=JSON.parse(localStorage.getItem(K)||'null');if(x)db=Object.assign(db,x)}catch(e){}}
-function save(){localStorage.setItem(K,JSON.stringify(db));s6RenderAll()}
-function msg(t,good=true){const e=document.getElementById('s6message');if(e)e.textContent=t}
-window.s6Tab=function(name,btn){document.querySelectorAll('#s6 .tabpane').forEach(x=>x.classList.remove('active'));document.getElementById('s6'+name).classList.add('active');document.querySelectorAll('#s6 .tabs button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');s6RenderAll()};
-function poNo(){return 'PO-'+new Date().getFullYear()+'-'+String(db.pos.length+1).padStart(5,'0')}
-function grnNo(){return 'GRN-'+new Date().getFullYear()+'-'+String(db.grns.length+1).padStart(5,'0')}
-window.s6NewPO=function(){document.getElementById('s6po').value=poNo();document.getElementById('s6podate').value=today();document.getElementById('s6expected').value=today();window.s6Tab('purchase');}
-let poLines=[];
-window.s6AddPOLine=function(){const p=val('s6polineproduct').trim();if(!p)return alert('Enter SKU / Product');poLines.push({product:p,hsn:val('s6polinehsn'),qty:n('s6polineqty'),unit:val('s6polineunit'),cost:n('s6polinecost'),tax:n('s6polinetax')});document.getElementById('s6polines').innerHTML='<table><tr><th>Product</th><th>HSN</th><th>Qty</th><th>Cost</th><th>Tax</th></tr>'+poLines.map(x=>`<tr><td>${esc(x.product)}</td><td>${esc(x.hsn)}</td><td>${x.qty} ${x.unit}</td><td>${x.cost.toFixed(2)}</td><td>${x.tax}%</td></tr>`).join('')+'</table>';}
-window.s6SavePO=function(){if(!val('s6supplier').trim())return alert('Enter supplier');if(!poLines.length)return alert('Add at least one purchase line');const o={id:id(),po:val('s6po')||poNo(),supplier:val('s6supplier'),date:val('s6podate')||today(),expected:val('s6expected'),currency:val('s6pocurrency'),warehouse:val('s6powarehouse')||'Main Warehouse',lines:poLines,status:'Open',createdAt:new Date().toISOString()};db.pos.push(o);poLines=[];s6ClearPO();save();msg(o.po+' saved offline.');}
-window.s6ClearPO=function(){['s6supplier','s6po','s6expected','s6powarehouse','s6polineproduct','s6polinehsn','s6polinecost'].forEach(x=>{const e=document.getElementById(x);if(e)e.value=''});document.getElementById('s6podate').value=today();document.getElementById('s6polines').innerHTML='';poLines=[];document.getElementById('s6po').value=poNo()}
-window.s6Receive=function(){document.getElementById('s6grn').value=grnNo();document.getElementById('s6grndate').value=today();window.s6Tab('receive')}
-window.s6SaveGRN=function(){const p=val('s6grnproduct').trim(),q=n('s6grnqty');if(!p||q<=0)return alert('Enter product and quantity');const r={id:id(),grn:val('s6grn')||grnNo(),po:val('s6grnpo'),supplier:val('s6grnsupplier'),warehouse:val('s6grnwarehouse')||'Main Warehouse',date:val('s6grndate')||today(),product:p,batch:val('s6grnbatch'),serials:val('s6grnserials').split(/\n|,/).map(x=>x.trim()).filter(Boolean),qty:q,cost:n('s6grncost'),expiry:val('s6grnexpiry'),createdAt:new Date().toISOString()};db.grns.push(r);movement(r.product,r.qty,'IN',r.warehouse,r.cost,r.grn);const pr=findProduct(r.product);if(pr)pr.stock=(Number(pr.stock)||0)+r.qty;else db.products.push({id:id(),sku:r.product,name:r.product,category:'',hsVersion:'HS 2022',hsn:'',unit:'PCS',stock:r.qty,reorder:0,cost:r.cost,sell:0,taxcat:'',warehouse:r.warehouse});save();document.getElementById('s6grnmsg').textContent=r.grn+' received. Stock updated.';}
-function findProduct(x){return db.products.find(p=>p.sku===x||p.name===x)}
-function movement(product,qty,type,warehouse,cost,ref){db.movements.push({id:id(),date:new Date().toISOString(),product,qty,type,warehouse,cost:Number(cost)||0,reference:ref||'',source:'Step 6'})}
-window.s6SaveProduct=function(){const sku=val('s6sku').trim(),name=val('s6productname').trim();if(!sku||!name)return alert('SKU and Product Name are required');let p=findProduct(sku);if(p){Object.assign(p,{sku,name,category:val('s6category'),hsVersion:val('s6hsversion'),hsn:val('s6hsn'),unit:val('s6unit'),reorder:n('s6reorder'),cost:n('s6cost'),sell:n('s6sell'),taxcat:val('s6taxcat2'),warehouse:val('s6warehouse')||'Main Warehouse'});if(val('s6opening')!=='')p.stock=n('s6opening')}else{p={id:id(),sku,name,category:val('s6category'),hsVersion:val('s6hsversion'),hsn:val('s6hsn'),unit:val('s6unit'),stock:n('s6opening'),reorder:n('s6reorder'),cost:n('s6cost'),sell:n('s6sell'),taxcat:val('s6taxcat2'),warehouse:val('s6warehouse')||'Main Warehouse'};db.products.push(p);if(p.stock)movement(p.sku,p.stock,'OPENING',p.warehouse,p.cost,'OPENING')}save();msg('Product saved: '+sku);s6NewProduct()}
-window.s6NewProduct=function(){['s6sku','s6productname','s6category','s6hsn','s6taxcat2'].forEach(x=>document.getElementById(x).value='');document.getElementById('s6opening').value=0;document.getElementById('s6reorder').value=5;document.getElementById('s6cost').value=0;document.getElementById('s6sell').value=0;document.getElementById('s6warehouse').value='Main Warehouse'}
-window.s6Transfer=function(){const p=findProduct(val('s6trproduct').trim()),q=n('s6trqty');if(!p||q<=0)return alert('Product not found or invalid quantity');const from=val('s6trfrom'),to=val('s6trto');if(!from||!to||from===to)return alert('Choose different warehouses');if((Number(p.stock)||0)<q)return alert('Insufficient stock in this local prototype');p.stock-=q;movement(p.sku,q,'TRANSFER OUT',from,p.cost,val('s6trref'));movement(p.sku,q,'TRANSFER IN',to,p.cost,val('s6trref'));document.getElementById('s6trmsg').textContent=`Transferred ${q} ${p.unit} of ${p.sku} from ${from} to ${to}.`;save()}
-window.s6Return=function(){const p=findProduct(val('s6retproduct').trim()),q=n('s6retqty');if(!p||q<=0)return alert('Product not found or invalid quantity');p.stock=Math.max(0,(Number(p.stock)||0)-q);const r={id:id(),date:new Date().toISOString(),supplier:val('s6retsupplier'),product:p.sku,qty:q,warehouse:val('s6retwarehouse'),reason:val('s6retreason'),reference:val('s6retref'),status:'Recorded'};db.returns.push(r);movement(p.sku,q,'PURCHASE RETURN OUT',r.warehouse,p.cost,r.reference);save();}
-window.s6SaveBatch=function(){const p=val('s6bproduct').trim(),q=n('s6bqty');if(!p||q<=0)return alert('Enter product and quantity');db.batches.push({id:id(),product:p,batch:val('s6bbatch'),serial:val('s6bserial'),mfg:val('s6bmfg'),expiry:val('s6bexp'),qty:q,warehouse:val('s6bwarehouse'),status:val('s6bstatus'),createdAt:new Date().toISOString()});save();}
-window.s6Adjust=function(){const sku=prompt('SKU / Product');if(!sku)return;const p=findProduct(sku);if(!p)return alert('Product not found');const q=Number(prompt('Adjustment quantity. Use negative for reduction','0'));if(!Number.isFinite(q))return;p.stock=Math.max(0,(Number(p.stock)||0)+q);movement(p.sku,Math.abs(q),q>=0?'ADJUSTMENT IN':'ADJUSTMENT OUT',p.warehouse,p.cost,'MANUAL');save();}
-window.s6RenderStock=function(){const q=(val('s6stockSearch')||'').toLowerCase();const a=db.products.filter(p=>JSON.stringify(p).toLowerCase().includes(q));document.getElementById('s6stockList').innerHTML=a.length?'<table><tr><th>SKU</th><th>Product</th><th>HS</th><th>Stock</th><th>Reorder</th><th>Warehouse</th><th>Value</th></tr>'+a.map(p=>`<tr><td>${esc(p.sku)}</td><td>${esc(p.name)}</td><td>${esc(p.hsn||'')}</td><td>${p.stock} ${p.unit} ${p.stock<=p.reorder?'<span class="pill low">LOW</span>':'<span class="pill ok">OK</span>'}</td><td>${p.reorder}</td><td>${esc(p.warehouse)}</td><td>${((Number(p.stock)||0)*(Number(p.cost)||0)).toFixed(2)}</td></tr>`).join('')+'</table>':'<p class="muted">No products.</p>'}
-window.s6RenderAll=function(){loadOnce();document.getElementById('s6statProducts').textContent=db.products.length;document.getElementById('s6statUnits').textContent=db.products.reduce((a,p)=>a+(Number(p.stock)||0),0);document.getElementById('s6statLow').textContent=db.products.filter(p=>(Number(p.stock)||0)<=(Number(p.reorder)||0)).length;document.getElementById('s6statPO').textContent=db.pos.length;document.getElementById('s6statValue').textContent=db.products.reduce((a,p)=>a+(Number(p.stock)||0)*(Number(p.cost)||0),0).toFixed(2);document.getElementById('s6statReturns').textContent=db.returns.length;document.getElementById('s6lowList').innerHTML=db.products.filter(p=>(Number(p.stock)||0)<=(Number(p.reorder)||0)).map(p=>`<div class="dangerbox">⚠️ <b>${esc(p.sku)}</b> — ${esc(p.name)}: ${p.stock} ${p.unit} remaining; reorder at ${p.reorder}.</div>`).join('')||'<div class="success">All current products are above reorder level.</div>';document.getElementById('s6poList').innerHTML=db.pos.length?'<table><tr><th>PO</th><th>Supplier</th><th>Date</th><th>Lines</th><th>Status</th></tr>'+db.pos.map(o=>`<tr><td>${o.po}</td><td>${esc(o.supplier)}</td><td>${o.date}</td><td>${o.lines.length}</td><td>${o.status}</td></tr>`).join('')+'</table>':'<p class="muted">No purchase orders.</p>';document.getElementById('s6grnList').innerHTML=db.grns.length?'<table><tr><th>GRN</th><th>Product</th><th>Qty</th><th>Warehouse</th><th>Batch</th><th>Date</th></tr>'+db.grns.map(r=>`<tr><td>${r.grn}</td><td>${esc(r.product)}</td><td>${r.qty}</td><td>${esc(r.warehouse)}</td><td>${esc(r.batch)}</td><td>${r.date}</td></tr>`).join('')+'</table>':'<p class="muted">No receipts.</p>';document.getElementById('s6movementList').innerHTML=db.movements.length?'<table><tr><th>Date</th><th>Product</th><th>Type</th><th>Qty</th><th>Warehouse</th><th>Reference</th></tr>'+db.movements.slice().reverse().map(m=>`<tr><td>${new Date(m.date).toLocaleString()}</td><td>${esc(m.product)}</td><td>${m.type}</td><td>${m.qty}</td><td>${esc(m.warehouse)}</td><td>${esc(m.reference)}</td></tr>`).join('')+'</table>':'<p class="muted">No movements.</p>';document.getElementById('s6returnList').innerHTML=db.returns.length?'<table><tr><th>Date</th><th>Supplier</th><th>Product</th><th>Qty</th><th>Reason</th></tr>'+db.returns.map(r=>`<tr><td>${new Date(r.date).toLocaleString()}</td><td>${esc(r.supplier)}</td><td>${esc(r.product)}</td><td>${r.qty}</td><td>${esc(r.reason)}</td></tr>`).join('')+'</table>':'<p class="muted">No returns.</p>';document.getElementById('s6batchList').innerHTML=db.batches.length?'<table><tr><th>Product</th><th>Batch</th><th>Serial</th><th>Qty</th><th>Expiry</th><th>Status</th></tr>'+db.batches.map(b=>`<tr><td>${esc(b.product)}</td><td>${esc(b.batch)}</td><td>${esc(b.serial)}</td><td>${b.qty}</td><td>${b.expiry||''}</td><td>${esc(b.status)}</td></tr>`).join('')+'</table>':'<p class="muted">No batches/serials.</p>';s6RenderStock();}
-let initialized=false;function loadOnce(){if(initialized)return;load();initialized=true}
-function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-window.s6Report=function(type){let out='';if(type==='stock')out=db.products.map(p=>`${p.sku}\t${p.name}\t${p.stock} ${p.unit}\tReorder ${p.reorder}\t${p.warehouse}`).join('\n')||'No products';if(type==='valuation')out='Inventory valuation\n\n'+db.products.map(p=>`${p.sku}: ${(Number(p.stock)||0)*(Number(p.cost)||0).toFixed(2)}`).join('\n');if(type==='movements')out=db.movements.map(m=>`${new Date(m.date).toLocaleString()} | ${m.type} | ${m.product} | ${m.qty} | ${m.warehouse} | ${m.reference}`).join('\n')||'No movements';if(type==='low')out=db.products.filter(p=>(Number(p.stock)||0)<=(Number(p.reorder)||0)).map(p=>`${p.sku} ${p.name}: ${p.stock} / reorder ${p.reorder}`).join('\n')||'No low-stock items';if(type==='purchase')out=db.pos.map(o=>`${o.po} | ${o.supplier} | ${o.date} | ${o.lines.length} line(s)`).join('\n')||'No purchase orders';document.getElementById('s6reportOut').textContent=out}
-window.s6Export=function(){loadOnce();const blob=new Blob([JSON.stringify({app:'SENQUARA ONE',module:'Step 6',exportedAt:new Date().toISOString(),data:db},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SENQUARA_ONE_STEP6_BACKUP.json';a.click();URL.revokeObjectURL(a.href);document.getElementById('s6backupMsg').textContent='Full Step 6 backup exported successfully.'}
-window.s6Import=function(inp){const f=inp.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.data)throw Error();localStorage.setItem('senquara_step6_preimport_backup',JSON.stringify(db));db=Object.assign({products:[],pos:[],grns:[],movements:[],returns:[],batches:[],meta:{}},x.data);save();document.getElementById('s6backupMsg').textContent='Import complete. Previous data was backed up locally.'}catch(e){alert('Invalid SENQUARA ONE Step 6 JSON backup.')}};r.readAsText(f)}
-window.s6ClearAll=function(){if(!confirm('Clear all Step 6 local data? This cannot be undone unless you exported a backup.'))return;localStorage.removeItem(K);db={products:[],pos:[],grns:[],movements:[],returns:[],batches:[],meta:{version:2}};save();document.getElementById('s6backupMsg').textContent='Step 6 local data cleared.'}
-window.showS6=function(){document.querySelectorAll('body > div[id]').forEach(x=>{if(x.id!=='s6')x.style.display='none'});document.getElementById('s6').style.display='block';loadOnce();s6NewPO();s6Receive();s6RenderAll()}
-document.addEventListener('DOMContentLoaded',()=>{loadOnce();s6NewPO();s6Receive();s6RenderAll()});
-})();
-</script>
-
-
-<script id="senquara-v3-js">
-(function(){
- const $=id=>document.getElementById(id);
- const money=n=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2}).format(Number(n)||0);
- const getJSON=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
- let sales=getJSON('senquara_sales_v1',[]);
- let billSeq=sales.length+1;
-
- function openDrawer(){ $('sqDrawer').classList.add('open');$('sqScrim').classList.add('show');}
- function closeDrawer(){ $('sqDrawer').classList.remove('open');$('sqScrim').classList.remove('show');}
- $('sqOpenMenu').onclick=openDrawer;$('sqCloseMenu').onclick=closeDrawer;$('sqScrim').onclick=closeDrawer;
-
- function activateOld(id){
-   const btn=[...document.querySelectorAll('.nav button')].find(b=>String(b.getAttribute('onclick')||'').includes("show('"+id+"'"));
-   if(btn) btn.click(); else if(typeof show==='function') {
-     const fake={classList:{add(){},remove(){}},textContent:id};
-     show(id,fake);
-   }
-   closeDrawer();
- }
- function openBill(){
-   document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
-   $('sqBillPage').classList.remove('hidden');
-   document.getElementById('title').textContent='Bill Generator';
-   initBill();
-   closeDrawer();
- }
- function openIP(){
-   document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
-   $('sqIPPage').classList.remove('hidden');
-   document.getElementById('title').textContent='IP Base Model';
-   loadIP();closeDrawer();
- }
- function openLanguage(){
-   document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
-   $('sqLanguagePage').classList.remove('hidden');
-   document.getElementById('title').textContent='Language';
-   closeDrawer();
- }
-
- document.querySelectorAll('.sq-menu-item').forEach(b=>b.onclick=()=>{
-   document.querySelectorAll('.sq-menu-item').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-   const v=b.dataset.sq;
-   if(v==='bill')return openBill();
-   if(v==='ip')return openIP();
-   if(v==='language')return openLanguage();
-   if(v==='tax'){ if(typeof showS4==='function')showS4();closeDrawer();return; }
-   if(v==='inventory'){ if(typeof showS5==='function')showS5();closeDrawer();return; }
-   if(v==='advanced'){ if(typeof showS6==='function')showS6();closeDrawer();return; }
-   activateOld(v);
- });
-
- function customerOptions(){
-   let d=getJSON('senquara_one_v1',{customers:[]});
-   let cs=Array.isArray(d.customers)?d.customers:[];
-   $('sqCustomer').innerHTML='<option>Cash Sale / Walk-in</option>'+cs.map(c=>'<option>'+esc(c)+'</option>').join('');
- }
- function productOptions(){
-   let d=getJSON('senquara_one_v1',{products:[]});
-   let ps=Array.isArray(d.products)?d.products:[];
-   return '<option value="">Select product</option>'+ps.map((p,i)=>'<option value="'+i+'">'+esc(p.name||'Product')+' — '+money(p.price||p.rate||0)+'</option>').join('');
- }
- function initBill(){
-   customerOptions();
-   $('sqInvNo').value='INV-'+String(billSeq).padStart(5,'0');
-   $('sqInvDate').value=new Date().toISOString().slice(0,10);
-   if(!$('sqItems').children.length)addBillItem();
-   calcBill();
- }
- function addBillItem(){
-   const row=document.createElement('div');row.className='sq-bill-item';
-   row.innerHTML='<div class="sq-bill-item-grid">'+
-    '<label>Product<select class="sq-prod">'+productOptions()+'</select></label>'+
-    '<label>Qty<input class="sq-qty" type="number" min="0.01" step="0.01" value="1"></label>'+
-    '<label>Rate<input class="sq-rate" type="number" min="0" step="0.01" value="0"></label>'+
-    '<label>GST %<input class="sq-gst" type="number" min="0" max="100" step="0.01" value="18"></label>'+
-    '<button type="button" class="btn sq-remove">Remove</button></div>';
-   row.querySelector('.sq-prod').onchange=function(){
-     const d=getJSON('senquara_one_v1',{products:[]}),p=d.products?.[this.value];
-     if(p){row.querySelector('.sq-rate').value=p.price??p.rate??0;row.querySelector('.sq-gst').value=p.gst??18}
-     calcBill();
-   };
-   row.querySelectorAll('input').forEach(x=>x.oninput=calcBill);
-   row.querySelector('.sq-remove').onclick=()=>{row.remove();if(!$('sqItems').children.length)addBillItem();calcBill()};
-   $('sqItems').appendChild(row);
- }
- $('sqAddItem').onclick=addBillItem;
- $('sqTaxType').onchange=calcBill;
-
- function calcBill(){
-   let taxable=0,cg=0,sg=0,ig=0;
-   document.querySelectorAll('#sqItems .sq-bill-item').forEach(r=>{
-    const base=(+r.querySelector('.sq-qty').value||0)*(+r.querySelector('.sq-rate').value||0);
-    const rate=+r.querySelector('.sq-gst').value||0;taxable+=base;
-    const tax=base*rate/100;
-    if($('sqTaxType').value==='intra'){cg+=tax/2;sg+=tax/2}
-    else if($('sqTaxType').value==='inter'){ig+=tax}
-   });
-   $('sqTaxable').textContent=money(taxable);$('sqCGST').textContent=money(cg);$('sqSGST').textContent=money(sg);$('sqIGST').textContent=money(ig);$('sqGrand').textContent=money(taxable+cg+sg+ig);
- }
- $('sqSaveBill').onclick=function(){
-   calcBill();
-   const total=Number(($('sqGrand').textContent||'').replace(/[₹,]/g,''))||0;
-   const items=[...document.querySelectorAll('#sqItems .sq-bill-item')].map(r=>({
-     product:r.querySelector('.sq-prod').selectedOptions[0]?.text||'Item',
-     qty:+r.querySelector('.sq-qty').value||0,rate:+r.querySelector('.sq-rate').value||0,gst:+r.querySelector('.sq-gst').value||0
-   }));
-   sales.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),invoice:$('sqInvNo').value,customer:$('sqCustomer').value,date:new Date().toISOString(),place:$('sqPlace').value,type:$('sqInvType').value,items,total});
-   localStorage.setItem('senquara_sales_v1',JSON.stringify(sales));billSeq++;
-   $('sqBillMsg').textContent='Bill saved: '+sales[sales.length-1].invoice+' • '+money(total);
-   $('sqInvNo').value='INV-'+String(billSeq).padStart(5,'0');
- };
- function previewBill(){
-   calcBill();
-   const rows=[...document.querySelectorAll('#sqItems .sq-bill-item')].map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.querySelector('.sq-prod').selectedOptions[0]?.text||'Item')+'</td><td>'+r.querySelector('.sq-qty').value+'</td><td>'+money(+r.querySelector('.sq-rate').value||0)+'</td><td>'+money((+r.querySelector('.sq-qty').value||0)*(+r.querySelector('.sq-rate').value||0))+'</td></tr>').join('');
-   const w=window.open('','_blank');if(!w)return;
-   w.document.write('<!doctype html><html><head><title>SENQUARA ONE Invoice</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px}h2{text-align:center}</style></head><body><h2>SENQUARA ONE — '+esc($('sqInvType').value)+'</h2><p><b>Invoice:</b> '+esc($('sqInvNo').value)+' &nbsp; <b>Date:</b> '+esc($('sqInvDate').value)+'</p><p><b>Customer:</b> '+esc($('sqCustomer').value)+'</p><table><tr><th>#</th><th>Product</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>'+rows+'</table><h3 style="text-align:right">Total: '+esc($('sqGrand').textContent)+'</h3><p>CGST '+esc($('sqCGST').textContent)+' · SGST '+esc($('sqSGST').textContent)+' · IGST '+esc($('sqIGST').textContent)+'</p></body></html>');
-   w.document.close();
- }
- $('sqPreview').onclick=previewBill;$('sqPrintBill').onclick=()=>{previewBill();};
- function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
- function loadIP(){
-   $('sqIPOnline').value=navigator.onLine?'Online':'Offline';
-   $('sqIPPlatform').value=navigator.platform||'Unknown';
-   $('sqIPBrowser').value=navigator.userAgent.slice(0,100);
- }
- $('sqRefreshIP').onclick=async()=>{loadIP();$('sqPublicIP').value='Loading…';try{const r=await fetch('https://api.ipify.org?format=json',{cache:'no-store'});const j=await r.json();$('sqPublicIP').value=j.ip}catch(e){$('sqPublicIP').value='Unavailable'}};
-
- // Master Panel theme: do not replace colours. Only consume a theme object if the Master Panel already stores one.
- function applyMasterTheme(){
-   let cfg=null;
-   for(const k of ['senquara_master_theme','senquara_theme_config','senquara_theme']){
-     try{const x=JSON.parse(localStorage.getItem(k)||'null');if(x){cfg=x;break}}catch(e){}
-   }
-   if(!cfg)return;
-   const root=document.documentElement;
-   const map={bg:'--bg',background:'--bg',panel:'--panel',panel2:'--panel2',text:'--text',muted:'--muted',accent:'--accent',accent2:'--accent2',danger:'--danger',border:'--border'};
-   Object.keys(map).forEach(k=>{if(cfg[k])root.style.setProperty(map[k],cfg[k])});
- }
- applyMasterTheme();
-
- window.addEventListener('online',loadIP);window.addEventListener('offline',loadIP);
- setTimeout(()=>{customerOptions();loadIP()},500);
-})();
-</script>
-
-<script src="js/senquara-auth.js?v=3"></script>
 </body>
 </html>
