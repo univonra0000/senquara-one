@@ -1,5 +1,4 @@
 /* SENQUARA ONE — Invoice/Thermal V8
-/* SENQUARA ONE — Floating 3D Input / Dropdown */
    Responsive patch only. Keeps existing Master Panel theme variables. */
 .sq-thermal-btn{min-height:38px;white-space:nowrap}
 .sq-thermal-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.58)}
