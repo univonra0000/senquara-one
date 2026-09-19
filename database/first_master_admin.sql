@@ -1,8 +1,8 @@
 -- SENQUARA ONE — first Master Admin account
 -- Run AFTER the users, roles and user_roles tables already exist.
 -- This creates the initial account without any bootstrap endpoint.
--- Password is the temporary password: admin
--- The application will require a password change after login.
+-- Master credentials are configured for the authorized owner account.
+-- The stored password is a PBKDF2-SHA256 hash; plaintext is not stored.
 
 INSERT OR IGNORE INTO roles(id,name,permissions) VALUES
 ('master_admin','Master Admin','["view","create","edit","delete","approve","export","manage_users","manage_roles","block_users","settings","backup"]'),
@@ -15,13 +15,13 @@ INSERT OR IGNORE INTO users(
   terms_version,terms_accepted_at,created_at,updated_at,must_change_password
 ) VALUES(
   'master-admin-001',
-  'admin@senquara.one',
+  'univonra@gmail.com',
   'Master Admin',
   '',
   'SENQUARA ONE',
   'India',
-  'RD3IvKpdXJDImgscQTZCx1gER0EV7h-43ztKJIr_5Rc',
-  'jRRbZw62xyIyXDW8VAuRmg',
+  'rJ3Tpo0zaLUdvcEjH0qi3BWk4A-bvk2AthitpREZMCE',
+  'jUicrAmAtTYdkemqucyaog',
   'master_admin',
   'active',
   1,
@@ -29,7 +29,7 @@ INSERT OR IGNORE INTO users(
   datetime('now'),
   datetime('now'),
   datetime('now'),
-  1
+  0
 );
 
 INSERT OR IGNORE INTO user_roles(id,user_id,role_id)
