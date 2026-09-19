@@ -1,8 +1,8 @@
 -- SENQUARA ONE — first Master Admin account
 -- Run AFTER the users, roles and user_roles tables already exist.
 -- This creates the initial account without any bootstrap endpoint.
--- Master credentials are configured for the authorized owner account.
--- The stored password is a PBKDF2-SHA256 hash; plaintext is not stored.
+-- Password is: univonra
+-- The application will require a password change after login.
 
 INSERT OR IGNORE INTO roles(id,name,permissions) VALUES
 ('master_admin','Master Admin','["view","create","edit","delete","approve","export","manage_users","manage_roles","block_users","settings","backup"]'),
@@ -20,8 +20,8 @@ INSERT OR IGNORE INTO users(
   '',
   'SENQUARA ONE',
   'India',
-  'rJ3Tpo0zaLUdvcEjH0qi3BWk4A-bvk2AthitpREZMCE',
-  'jUicrAmAtTYdkemqucyaog',
+  '6VScPXz8Aezo6PBk-yJtEi2MRVknZPVJH3mMQHgLxpw',
+  'S_dh7LMjuK3IBExcjuhfQA',
   'master_admin',
   'active',
   1,
