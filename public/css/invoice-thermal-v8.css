@@ -1,0 +1,22 @@
+/* SENQUARA ONE — Invoice/Thermal V8
+   Responsive patch only. Keeps existing Master Panel theme variables. */
+.sq-thermal-btn{min-height:38px;white-space:nowrap}
+.sq-thermal-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.58)}
+.sq-thermal-backdrop.hidden{display:none}
+.sq-thermal-card{width:min(560px,96vw);max-height:92vh;overflow:auto;background:var(--panel,#111733);color:var(--text,#f6f7ff);border:1px solid var(--border,#29305a);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:16px}
+.sq-thermal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.sq-thermal-head h3{margin:0;font-size:18px}
+.sq-thermal-close{border:1px solid var(--border,#29305a);background:transparent;color:var(--text,#f6f7ff);border-radius:10px;padding:8px 12px;cursor:pointer}
+.sq-thermal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sq-thermal-field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted,#aeb6d5)}
+.sq-thermal-field select{width:100%;min-height:42px;padding:9px 10px;border:1px solid var(--border,#29305a);border-radius:10px;background:var(--panel2,#171d42);color:var(--text,#f6f7ff);box-shadow:0 5px 0 rgba(185,65,54,.14),0 10px 22px rgba(35,25,20,.10)}
+.sq-thermal-check{display:flex;align-items:center;gap:9px;margin-top:12px;color:var(--text,#f6f7ff)}
+.sq-thermal-check input{width:18px;height:18px;accent-color:var(--accent,#8b7cff)}
+.sq-thermal-preview{margin-top:14px;padding:12px;border:1px dashed var(--border,#29305a);border-radius:12px;background:rgba(255,255,255,.035)}
+.sq-thermal-actions{display:flex;gap:10px;margin-top:14px}
+.sq-thermal-actions button{flex:1;min-height:42px}
+.sq-receipt{width:min(100%,300px);margin:auto;background:#fff;color:#111;padding:12px;font-family:"Courier New",monospace;font-size:11px;line-height:1.35;box-shadow:0 5px 18px rgba(0,0,0,.18)}
+.sq-receipt .c{text-align:center}.sq-receipt .r{text-align:right}.sq-receipt .b{font-weight:800}.sq-receipt hr{border:0;border-top:1px dashed #111;margin:8px 0}.sq-receipt .row{display:flex;justify-content:space-between;gap:8px}.sq-receipt table{width:100%;border-collapse:collapse}.sq-receipt td{padding:2px 0;vertical-align:top}.sq-receipt .qr{display:block;width:100px;height:100px;object-fit:contain;margin:8px auto}
+.invoice-paper{overflow-x:auto}
+@media(max-width:650px){.sq-thermal-card{padding:12px;border-radius:14px}.sq-thermal-grid{grid-template-columns:1fr}.sq-thermal-actions{flex-direction:column}.sq-thermal-actions button{width:100%}.sq-thermal-btn{width:100%}}
+@media print{.sq-thermal-backdrop,.sq-thermal-btn,.modal-backdrop,.toast{display:none!important}}
