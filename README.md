@@ -1,5 +1,5 @@
 # SENQUARA ONE — Cloudflare Worker + D1
-
+Deployment sync: 2026-09-19
 This package connects the SENQUARA ONE frontend to a Cloudflare Worker API and Cloudflare D1 database.
 
 ## 1. Create D1

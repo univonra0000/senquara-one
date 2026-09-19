@@ -1,3 +1,1 @@
-SENQUARA ONE V3
-Base: user-supplied senquara-one-main.zip
-Status: upgraded working package; deployment/test still required
+SENQUARA ONE 2.0.0 — Dashboard & Invoice Workspace Upgrade
