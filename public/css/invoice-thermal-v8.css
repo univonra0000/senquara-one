@@ -1,56 +1,5 @@
 /* SENQUARA ONE — Invoice/Thermal V8
 /* SENQUARA ONE — Floating 3D Input / Dropdown */
-input,
-select,
-textarea {
-  border: 1px solid var(--border, #29305a);
-  border-radius: 14px;
-
-  box-shadow:
-    0 3px 0 rgba(255,255,255,0.08) inset,
-    0 -2px 0 rgba(0,0,0,0.18) inset,
-    4px 5px 0 rgba(35,25,20,0.12),
-    0 12px 24px rgba(35,25,20,0.16);
-
-  transition:
-    transform .18s ease,
-    box-shadow .18s ease,
-    border-color .18s ease;
-}
-
-/* Floating / raised on focus */
-input:focus,
-select:focus,
-textarea:focus {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 3px 0 rgba(255,255,255,0.10) inset,
-    0 -2px 0 rgba(0,0,0,0.18) inset,
-    4px 6px 0 rgba(139,124,255,0.16),
-    0 14px 28px rgba(35,25,20,0.18);
-
-  border-color: var(--accent, #8b7cff);
-  outline: none;
-}
-
-/* Dropdown arrow area also feels raised */
-select {
-  cursor: pointer;
-  appearance: auto;
-}
-
-/* Press effect */
-input:active,
-select:active,
-textarea:active {
-  transform: translateY(1px);
-
-  box-shadow:
-    0 2px 0 rgba(255,255,255,0.05) inset,
-    2px 2px 0 rgba(35,25,20,0.10),
-    0 5px 12px rgba(35,25,20,0.10);
-}
    Responsive patch only. Keeps existing Master Panel theme variables. */
 .sq-thermal-btn{min-height:38px;white-space:nowrap}
 .sq-thermal-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.58)}
