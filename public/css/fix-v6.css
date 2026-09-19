@@ -1,23 +1,181 @@
 /* SENQUARA ONE UI FIX v6 - append/load after app.css */
-button,input,select,textarea{box-shadow:0 3px 10px rgba(10,18,45,.10)}
-.card,.modal-card,.master-control,.update-banner,.toast{box-shadow:0 4px 16px rgba(10,18,45,.10)}
-input,select,textarea{min-height:44px}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,140,255,.14),0 4px 12px rgba(10,18,45,.10)}
-.modal{padding:12px}
-.modal-card{width:min(680px,100%);max-height:92vh;overflow:auto}
-.modal-card form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.modal-card form label{display:grid;gap:7px;min-width:0}
-.modal-card form label:has(textarea){grid-column:1/-1}
-.modal-card form .full,.modal-card form button{min-width:0}
-.sto-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media(max-width:700px){
- .modal-card{padding:16px}
- .modal-card form{grid-template-columns:1fr}
- .modal-card form label:has(textarea){grid-column:auto}
- .modal-card .actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
- .modal-card .actions button{width:100%}
- .sto-grid{grid-template-columns:1fr}
+
+/* =========================================================
+   SENQUARA ONE — COMMON FLOATING SHADOW
+   ========================================================= */
+
+button,
+input,
+select,
+textarea {
+  -webkit-box-shadow:
+    -9px -4px 16px -7px rgba(216,223,26,0.52);
+
+  box-shadow:
+    -9px -4px 16px -7px rgba(216,223,26,0.52);
+
+  transition:
+    box-shadow .2s ease,
+    transform .2s ease,
+    border-color .2s ease;
 }
-@media(max-width:420px){
- .modal-card .actions{grid-template-columns:1fr}
+
+.card,
+.modal-card,
+.master-control,
+.update-banner,
+.toast {
+  -webkit-box-shadow:
+    -9px -4px 16px -7px rgba(216,223,26,0.52);
+
+  box-shadow:
+    -9px -4px 16px -7px rgba(216,223,26,0.52);
+}
+
+input,
+select,
+textarea {
+  min-height:44px;
+}
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline:none;
+  border-color:var(--accent);
+
+  -webkit-box-shadow:
+    -9px -4px 20px -5px rgba(216,223,26,0.68),
+    0 0 0 3px rgba(124,140,255,0.14);
+
+  box-shadow:
+    -9px -4px 20px -5px rgba(216,223,26,0.68),
+    0 0 0 3px rgba(124,140,255,0.14);
+
+  transform:translateY(-1px);
+}
+
+/* =========================================================
+   HOVER — FLOATING EFFECT
+   ========================================================= */
+
+button:hover,
+input:hover,
+select:hover,
+textarea:hover {
+  -webkit-box-shadow:
+    -9px -4px 18px -6px rgba(216,223,26,0.58);
+
+  box-shadow:
+    -9px -4px 18px -6px rgba(216,223,26,0.58);
+
+  transform:translateY(-1px);
+}
+
+/* Don't lift disabled controls */
+button:disabled {
+  transform:none;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal {
+  padding:12px;
+}
+
+.modal-card {
+  width:min(680px,100%);
+  max-height:92vh;
+  overflow:auto;
+}
+
+.modal-card form {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.modal-card form label {
+  display:grid;
+  gap:7px;
+  min-width:0;
+}
+
+.modal-card form label:has(textarea) {
+  grid-column:1/-1;
+}
+
+.modal-card form .full,
+.modal-card form button {
+  min-width:0;
+}
+
+/* =========================================================
+   USER MONITOR GRID
+   ========================================================= */
+
+.sto-grid {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media(max-width:700px) {
+
+  .modal-card {
+    padding:16px;
+  }
+
+  .modal-card form {
+    grid-template-columns:1fr;
+  }
+
+  .modal-card form label:has(textarea) {
+    grid-column:auto;
+  }
+
+  .modal-card .actions {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+
+  .modal-card .actions button {
+    width:100%;
+  }
+
+  .sto-grid {
+    grid-template-columns:1fr;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height:46px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media(max-width:420px) {
+
+  .modal-card .actions {
+    grid-template-columns:1fr;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height:48px;
+  }
 }
