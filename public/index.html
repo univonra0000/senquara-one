@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101828">
 <title>SENQUARA ONE — Business Dashboard</title>
+<meta name="google-client-id" content="">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="css/dashboard-v2.css">
 </head>
 <body>
@@ -238,6 +240,7 @@
       <section class="page" id="settings">
         <div class="page-head"><div><h2>Settings</h2><p class="muted">Workspace preferences and data maintenance.</p></div></div>
         <article class="panel form-panel"><div class="panel-head"><div><h3>Business profile</h3><p class="muted">These values are shared with invoice printing.</p></div></div><form id="profileForm" class="form-grid"><label>Business name<input id="setBusinessName"></label><label>Country<input value="India" readonly></label><label>Currency<select id="currency"><option value="INR">INR — ₹</option><option value="USD">USD — $</option></select></label><label>Timezone<input value="Asia/Kolkata" readonly></label><label class="full">Address<textarea id="setAddress"></textarea></label><div class="form-actions full"><button class="btn primary">Save profile</button></div></form></article>
+        <article class="panel" id="accountSecurityPanel"><div class="panel-head"><div><h3>Account security</h3><p class="muted">Change your password and optionally link your Google account for sign-in.</p></div></div><div class="security-grid"><div><b id="accountRoleLabel">Role</b><p class="muted" id="accountGoogleStatus">Google account not linked</p></div><div class="security-actions"><button class="btn" id="changePasswordBtn">Change password</button><button class="btn" id="linkGoogleBtn">Link Google account</button></div></div></article>
         <article class="panel danger-zone"><div><h3>Data maintenance</h3><p class="muted">Export a backup before clearing workspace data.</p></div><div class="actions"><button class="btn" id="backupData">Download backup</button><button class="btn danger" id="clearData">Clear business data</button></div></article>
       </section>
     </div>
